@@ -1,8 +1,9 @@
 package dao;
 
-import database.ConnectDB;
+import common.ConnectDB;
 import model.User;
 import model.Role;
+
 public class UserDAO {
 	public User findByUsername(String username) {
 
