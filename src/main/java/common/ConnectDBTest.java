@@ -11,6 +11,12 @@ import java.sql.Connection;
 public class ConnectDBTest {
 
 	public static void main(String[] args) {
+		// Ép console xuất UTF-8 để hiển thị tiếng Việt và Emoji chuẩn (Requirement: FORCE_SYSTEM_OUT_UTF8)
+		try {
+			System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out), true, java.nio.charset.StandardCharsets.UTF_8.name()));
+			System.setErr(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.err), true, java.nio.charset.StandardCharsets.UTF_8.name()));
+		} catch (Exception e) {}
+
 		System.out.println("========================================");
 		System.out.println("  TEST KẾT NỐI DATABASE");
 		System.out.println("========================================\n");
