@@ -1,6 +1,5 @@
 package app;
 
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 
@@ -17,7 +16,6 @@ import javax.swing.border.EmptyBorder;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import common.ColorScheme;
-import common.IconHelper;
 import dao.NguoiDungDao;
 import entity.NguoiDung;
 
@@ -140,7 +138,7 @@ public class LoginFrame extends JFrame {
 		// Setup Leading Icon and Reveal Button
 		// txtPassword.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
 		// IconHelper.getIcon(MaterialDesignA.ACCOUNT, 18, ColorScheme.TEXT_SECONDARY));
-		txtPassword.putClientProperty(FlatClientProperties.STYLE, "showRevealButton: true; arc: 10");
+		txtPassword.putClientProperty(FlatClientProperties.STYLE, "arc: 10");
 		txtPassword.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Nhập mật khẩu");
 
 		txtPassword.setBackground(ColorScheme.INPUT_FOCUS);
@@ -267,6 +265,12 @@ public class LoginFrame extends JFrame {
 	 * Main method
 	 */
 	public static void main(String[] args) {
+		// Ép console xuất UTF-8 để hiển thị tiếng Việt và Emoji chuẩn (Requirement: FORCE_SYSTEM_OUT_UTF8)
+		try {
+			System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out), true, java.nio.charset.StandardCharsets.UTF_8.name()));
+			System.setErr(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.err), true, java.nio.charset.StandardCharsets.UTF_8.name()));
+		} catch (Exception e) {}
+		
 		// Sử dụng FlatLaf với theme pastel
 		try {
 			UIManager.setLookAndFeel("com.formdev.flatlaf.FlatLightLaf");

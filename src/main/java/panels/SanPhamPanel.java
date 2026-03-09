@@ -108,13 +108,17 @@ public class SanPhamPanel extends JPanel {
 		setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
 		// Title
-		var titlePanel = new JPanel(new BorderLayout());
+		var titlePanel = new JPanel(new BorderLayout(0, 10));
 		titlePanel.setOpaque(false);
 		titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 		var lblTitle = new JLabel("Quản lý sản phẩm");
 		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
 		lblTitle.setForeground(ColorScheme.TEXT_PRIMARY);
 		titlePanel.add(lblTitle, BorderLayout.WEST);
+		
+		var infoBanner = UIHelper.createInfoBanner("<html>ℹ️ <b>Danh mục Sản phẩm:</b> Nơi quản lý thông tin chung của mặt hàng kinh doanh (chưa lưu tồn kho số lượng - số lượng nằm ở Quản lý lô hàng).</html>");
+		titlePanel.add(infoBanner, BorderLayout.SOUTH);
+		
 		add(titlePanel, BorderLayout.NORTH);
 
 		// Main content
@@ -595,7 +599,7 @@ public class SanPhamPanel extends JPanel {
 	/**
 	 * Load dữ liệu (reset về trang 1, xóa keyword)
 	 */
-	private void loadData() {
+	public void loadData() {
 		currentPage = 1;
 		currentKeyword = null;
 		loadPageData();

@@ -52,18 +52,20 @@ public class NguoiDungPanel extends JPanel {
 	 */
 	public NguoiDungPanel(NguoiDung currentUser) {
 	    this.currentUser = currentUser;
-
-	    if (!"Admin".equals(currentUser.getVaiTro())) {
-	        JOptionPane.showMessageDialog(null,
-	            "Chỉ Admin mới có quyền truy cập chức năng này!",
-	            "Không có quyền",
-	            JOptionPane.WARNING_MESSAGE);
-	        throw new RuntimeException("Access denied");
-	    }
-
 	    dao = new NguoiDungDao();
 	    initialize();
 	    loadData();
+		if (!"Admin".equals(currentUser.getVaiTro())) {
+			// Disable panel interactions instead of throwing an exception
+			setPermissionsDisabled();
+		}
+	}
+
+	private void setPermissionsDisabled() {
+		btnThem.setEnabled(false);
+		btnSua.setEnabled(false);
+		btnXoa.setEnabled(false);
+		btnLamMoi.setEnabled(false);
 	}
 
 

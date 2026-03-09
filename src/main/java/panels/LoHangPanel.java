@@ -65,12 +65,17 @@ public class LoHangPanel extends JPanel {
 		setBackground(ColorScheme.BACKGROUND);
 		setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-		var titlePanel = new JPanel(new BorderLayout());
+		var titlePanel = new JPanel(new BorderLayout(0, 10));
 		titlePanel.setOpaque(false);
+		titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 		var lblTitle = new JLabel("Quản lý lô hàng");
 		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
 		lblTitle.setForeground(ColorScheme.TEXT_PRIMARY);
 		titlePanel.add(lblTitle, BorderLayout.WEST);
+		
+		var infoBanner = UIHelper.createInfoBanner("<html>ℹ️ <b>Nghiệp vụ Lô hàng:</b> Quản lý chi tiết từng lô thuốc, theo dõi tồn kho và cảnh báo <b>hạn sử dụng</b> thực tế.</html>");
+		titlePanel.add(infoBanner, BorderLayout.SOUTH);
+		
 		add(titlePanel, BorderLayout.NORTH);
 
 		var mainPanel = new JPanel(new BorderLayout(15, 0));
@@ -267,7 +272,7 @@ public class LoHangPanel extends JPanel {
 		return panel;
 	}
 
-	private void loadData() {
+	public void loadData() {
 		tableModel.setRowCount(0);
 		var list = loHangDao.getAll();
 		for (var lh : list) {
