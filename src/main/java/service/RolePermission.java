@@ -8,12 +8,12 @@ import java.util.*;
 public class RolePermission {
 
     private static final Map<Role, Set<Permission>> MAP = Map.of(
-        Role.Admin, EnumSet.allOf(Permission.class),
-        Role.QuanLy, EnumSet.of(
+        Role.ADMIN, EnumSet.allOf(Permission.class),
+        Role.QUANLY, EnumSet.of(
             Permission.MEDICINE_MANAGE,
             Permission.REPORT_VIEW
         ),
-        Role.NhanVien, EnumSet.of(
+        Role.NHANVIEN, EnumSet.of(
             Permission.MEDICINE_MANAGE
         )
     );
