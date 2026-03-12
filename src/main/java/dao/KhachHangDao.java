@@ -104,6 +104,67 @@ public class KhachHangDao {
 		return false;
 	}
 
+	/**
+	 * Tìm kiếm khách hàng theo tên hoặc số điện thoại (cho autocomplete)
+	 */
+	public List<KhachHang> searchByNameOrPhone(String keyword) {
+		List<KhachHang> list = new ArrayList<>();
+		if (keyword == null || keyword.trim().isEmpty()) {
+			return list;
+		}
+		try (
+			var con = ConnectDB.getCon();
+			var ps = con.prepareStatement(
+				"SELECT TOP 10 * FROM KhachHang WHERE DaXoa = 0 " +
+				"AND (HoTen LIKE ? OR SoDienThoai LIKE ?) ORDER BY HoTen"
+			);
+		) {
+			String pattern = "%" + keyword.trim() + "%";
+			ps.setNString(1, pattern);
+			ps.setNString(2, pattern);
+			var rs = ps.executeQuery();
+			while (rs.next()) {
+				list.add(mapResultSet(rs));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+
+	/**
+	 * Thêm khách hàng mới và trả về mã khách hàng vừa tạo
+	 */
+	public Integer insertAndGetId(KhachHang kh) {
+		try (
+			var con = ConnectDB.getCon();
+			var ps = con.prepareStatement(
+				"INSERT INTO KhachHang(HoTen, SoDienThoai, Email, DiaChi, HoSoBenhAn) " +
+				"VALUES (?, ?, ?, ?, ?); SELECT SCOPE_IDENTITY() AS NewId;"
+			);
+		) {
+			ps.setNString(1, kh.getHoTen());
+			ps.setNString(2, kh.getSoDienThoai());
+			ps.setNString(3, kh.getEmail());
+			ps.setNString(4, kh.getDiaChi());
+			ps.setNString(5, kh.getHoSoBenhAn());
+			boolean hasResult = ps.execute();
+			// Skip first result set (update count), get second (SELECT SCOPE_IDENTITY)
+			if (!hasResult) {
+				hasResult = ps.getMoreResults();
+			}
+			if (hasResult) {
+				var rs = ps.getResultSet();
+				if (rs.next()) {
+					return rs.getInt("NewId");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	private KhachHang mapResultSet(ResultSet rs) throws Exception {
 		var kh = new KhachHang();
 		kh.setMaKhachHang(rs.getInt("MaKhachHang"));

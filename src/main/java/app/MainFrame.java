@@ -164,31 +164,35 @@ public class MainFrame extends JFrame {
 		headerPanel.setBackground(ColorScheme.PANEL_BG);
 		headerPanel.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BORDER),
-			BorderFactory.createEmptyBorder(0, 20, 0, 20)
+			BorderFactory.createEmptyBorder(0, 24, 0, 24)
 		));
-		headerPanel.setPreferredSize(new Dimension(0, 60));
+		headerPanel.setPreferredSize(new Dimension(0, 52));
 		headerPanel.setLayout(new BorderLayout());
 
-		// Left: Title
+		// Left: App name
 		var lblPageTitle = new JLabel("MEPHAR QUẢN LÝ");
-		lblPageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		lblPageTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
 		lblPageTitle.setForeground(ColorScheme.PRIMARY);
 		headerPanel.add(lblPageTitle, BorderLayout.WEST);
 
-		// Right: User Info
-		var userPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 15, 10));
+		// Right: User badge + Logout
+		var userPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 12, 8));
 		userPanel.setOpaque(false);
 
-		var lblUser = new JLabel("Xin chào, " + currentUser.getHoTen());
-		lblUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
+		// User info badge
+		var lblUser = new JLabel("👤 " + currentUser.getHoTen());
+		lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		lblUser.setForeground(ColorScheme.TEXT_PRIMARY);
+		lblUser.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
+			new javax.swing.border.EmptyBorder(6, 12, 6, 12)
+		));
+		lblUser.setOpaque(true);
+		lblUser.setBackground(ColorScheme.BACKGROUND);
 		userPanel.add(lblUser);
 
-		var btnLogout = new JButton("Đăng xuất");
-		btnLogout.setBackground(ColorScheme.BACKGROUND); // Light gray button
-		btnLogout.setForeground(ColorScheme.DANGER);
-		btnLogout.setFocusPainted(false);
-		btnLogout.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER));
+		// Outline logout button
+		var btnLogout = common.UIHelper.createOutlineButton("Đăng xuất", ColorScheme.DANGER);
 		btnLogout.addActionListener(e -> {
 			int option = javax.swing.JOptionPane.showConfirmDialog(
 				this, "Bạn có muốn đăng xuất không?", "Đăng xuất", javax.swing.JOptionPane.YES_NO_OPTION
