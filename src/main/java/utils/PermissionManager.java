@@ -18,7 +18,7 @@ public class PermissionManager {
         // Cấu hình quyền truy cập cho từng chức năng (Action)
         permissions.put("dashboard", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("banhang", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
-        permissions.put("nhaphang", Arrays.asList(Role.ADMIN));
+        permissions.put("nhaphang", Arrays.asList(Role.ADMIN, Role.QUANLY));
         permissions.put("sanpham", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("lohang", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("khachhang", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));

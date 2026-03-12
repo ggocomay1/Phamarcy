@@ -382,6 +382,12 @@ CREATE TABLE dbo.LoHang (
     NgayNhap DATETIME NOT NULL DEFAULT GETDATE(),
     TrangThai NVARCHAR(30) NOT NULL DEFAULT N'Đang bán'
         CHECK (TrangThai IN (N'Đang bán', N'Ngưng bán', N'Hết hàng')),
+    LoaiHinhBan NVARCHAR(20) DEFAULT N'Bán sỉ' CHECK (LoaiHinhBan IN (N'Bán sỉ', N'Bán lẻ')),
+    ThoiGianNhap DATETIME DEFAULT GETDATE(),
+    TongSoVien_Lo INT,
+    DonViNhap NVARCHAR(50),
+    SoViTrenHop INT,
+    SoVienTrenVi INT,
     CONSTRAINT FK_LoHang_SanPham FOREIGN KEY (MaSanPham) REFERENCES dbo.SanPham(MaSanPham),
     CONSTRAINT FK_LoHang_NCC FOREIGN KEY (MaNCC) REFERENCES dbo.NhaCungCap(MaNCC),
     CONSTRAINT UX_LoHang UNIQUE (MaSanPham, SoLo)

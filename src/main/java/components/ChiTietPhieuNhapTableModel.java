@@ -11,25 +11,31 @@ import javax.swing.table.DefaultTableModel;
 public class ChiTietPhieuNhapTableModel extends DefaultTableModel {
 
 	public ChiTietPhieuNhapTableModel() {
+		addColumn("STT");
 		addColumn("Mã SP");
 		addColumn("Tên sản phẩm");
-		addColumn("Mã số lô hàng");
+		addColumn("Số lô");
 		addColumn("Hạn sử dụng");
 		addColumn("Giá nhập");
 		addColumn("Số lượng");
-		addColumn("Tổng giá trị mục");
+		addColumn("Thành tiền");
+		addColumn("ĐVT");
+		addColumn("Loại hình");
 	}
 
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
 		return switch (columnIndex) {
-			case 0 -> Integer.class;  // Mã SP
-			case 1 -> String.class;   // Tên sản phẩm
-			case 2 -> String.class;   // Số lô
-			case 3 -> java.time.LocalDate.class; // Hạn sử dụng
-			case 4 -> java.math.BigDecimal.class; // Giá nhập
-			case 5 -> Integer.class;  // Số lượng
-			case 6 -> java.math.BigDecimal.class; // Thành tiền
+			case 0 -> Integer.class;  // STT
+			case 1 -> Integer.class;  // Mã SP
+			case 2 -> String.class;   // Tên sản phẩm
+			case 3 -> String.class;   // Số lô
+			case 4 -> java.time.LocalDate.class; // Hạn sử dụng
+			case 5 -> java.math.BigDecimal.class; // Giá nhập
+			case 6 -> Integer.class;  // Số lượng
+			case 7 -> java.math.BigDecimal.class; // Thành tiền
+			case 8 -> String.class;   // ĐVT
+			case 9 -> String.class;   // Loại hình
 			default -> String.class;
 		};
 	}

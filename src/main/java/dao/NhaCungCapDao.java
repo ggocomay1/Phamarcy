@@ -57,10 +57,10 @@ public class NhaCungCapDao {
 				"INSERT INTO NhaCungCap(TenNCC, SoDienThoai, Email, DiaChi) VALUES (?, ?, ?, ?)"
 			);
 		) {
-			ps.setString(1, ncc.getTenNCC());
-			ps.setString(2, ncc.getSoDienThoai());
-			ps.setString(3, ncc.getEmail());
-			ps.setString(4, ncc.getDiaChi());
+			ps.setNString(1, ncc.getTenNCC());
+			ps.setNString(2, ncc.getSoDienThoai());
+			ps.setNString(3, ncc.getEmail());
+			ps.setNString(4, ncc.getDiaChi());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -75,10 +75,10 @@ public class NhaCungCapDao {
 				"UPDATE NhaCungCap SET TenNCC=?, SoDienThoai=?, Email=?, DiaChi=? WHERE MaNCC=?"
 			);
 		) {
-			ps.setString(1, ncc.getTenNCC());
-			ps.setString(2, ncc.getSoDienThoai());
-			ps.setString(3, ncc.getEmail());
-			ps.setString(4, ncc.getDiaChi());
+			ps.setNString(1, ncc.getTenNCC());
+			ps.setNString(2, ncc.getSoDienThoai());
+			ps.setNString(3, ncc.getEmail());
+			ps.setNString(4, ncc.getDiaChi());
 			ps.setInt(5, ncc.getMaNCC());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {

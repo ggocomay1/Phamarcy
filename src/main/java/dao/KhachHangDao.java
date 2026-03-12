@@ -58,11 +58,11 @@ public class KhachHangDao {
 				"VALUES (?, ?, ?, ?, ?)"
 			);
 		) {
-			ps.setString(1, kh.getHoTen());
-			ps.setString(2, kh.getSoDienThoai());
-			ps.setString(3, kh.getEmail());
-			ps.setString(4, kh.getDiaChi());
-			ps.setString(5, kh.getHoSoBenhAn());
+			ps.setNString(1, kh.getHoTen());
+			ps.setNString(2, kh.getSoDienThoai());
+			ps.setNString(3, kh.getEmail());
+			ps.setNString(4, kh.getDiaChi());
+			ps.setNString(5, kh.getHoSoBenhAn());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -78,11 +78,11 @@ public class KhachHangDao {
 				"WHERE MaKhachHang=?"
 			);
 		) {
-			ps.setString(1, kh.getHoTen());
-			ps.setString(2, kh.getSoDienThoai());
-			ps.setString(3, kh.getEmail());
-			ps.setString(4, kh.getDiaChi());
-			ps.setString(5, kh.getHoSoBenhAn());
+			ps.setNString(1, kh.getHoTen());
+			ps.setNString(2, kh.getSoDienThoai());
+			ps.setNString(3, kh.getEmail());
+			ps.setNString(4, kh.getDiaChi());
+			ps.setNString(5, kh.getHoSoBenhAn());
 			ps.setInt(6, kh.getMaKhachHang());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {

@@ -2,7 +2,7 @@ package test;
 
 import java.sql.Connection;
 
-import database.ConnectDB;
+import common.ConnectDB;
 
 public class TestConnectDB {
 
