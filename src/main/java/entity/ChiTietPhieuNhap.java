@@ -18,13 +18,20 @@ public class ChiTietPhieuNhap {
 	private BigDecimal giaNhap;
 	private int soLuong;
 	private BigDecimal thanhTien;
+	private String donViNhap;
+	private String loaiHinhBan;
+	private int soViTrenHop;
+	private int soVienTrenVi;
+	private int tongSoVien;
+	private boolean mergeBatch; // true: Cộng dồn, false: Tạo mới dòng riêng
 
 	public ChiTietPhieuNhap() {
 	}
 
 	public ChiTietPhieuNhap(int maCTPN, int maPhieuNhap, int maSanPham,
 			String soLo, LocalDate hanSuDung, BigDecimal giaNhap,
-			int soLuong, BigDecimal thanhTien) {
+			int soLuong, BigDecimal thanhTien, String donViNhap, String loaiHinhBan,
+			int soViTrenHop, int soVienTrenVi, int tongSoVien) {
 		this.maCTPN = maCTPN;
 		this.maPhieuNhap = maPhieuNhap;
 		this.maSanPham = maSanPham;
@@ -33,6 +40,11 @@ public class ChiTietPhieuNhap {
 		this.giaNhap = giaNhap;
 		this.soLuong = soLuong;
 		this.thanhTien = thanhTien;
+		this.donViNhap = donViNhap;
+		this.loaiHinhBan = loaiHinhBan;
+		this.soViTrenHop = soViTrenHop;
+		this.soVienTrenVi = soVienTrenVi;
+		this.tongSoVien = tongSoVien;
 	}
 
 	// Getters and Setters
@@ -98,6 +110,54 @@ public class ChiTietPhieuNhap {
 
 	public void setThanhTien(BigDecimal thanhTien) {
 		this.thanhTien = thanhTien;
+	}
+
+	public String getDonViNhap() {
+		return donViNhap;
+	}
+
+	public void setDonViNhap(String donViNhap) {
+		this.donViNhap = donViNhap;
+	}
+
+	public String getLoaiHinhBan() {
+		return loaiHinhBan;
+	}
+
+	public void setLoaiHinhBan(String loaiHinhBan) {
+		this.loaiHinhBan = loaiHinhBan;
+	}
+
+	public int getSoViTrenHop() {
+		return soViTrenHop;
+	}
+
+	public void setSoViTrenHop(int soViTrenHop) {
+		this.soViTrenHop = soViTrenHop;
+	}
+
+	public int getSoVienTrenVi() {
+		return soVienTrenVi;
+	}
+
+	public void setSoVienTrenVi(int soVienTrenVi) {
+		this.soVienTrenVi = soVienTrenVi;
+	}
+
+	public int getTongSoVien() {
+		return tongSoVien;
+	}
+
+	public void setTongSoVien(int tongSoVien) {
+		this.tongSoVien = tongSoVien;
+	}
+
+	public boolean isMergeBatch() {
+		return mergeBatch;
+	}
+
+	public void setMergeBatch(boolean mergeBatch) {
+		this.mergeBatch = mergeBatch;
 	}
 
 	@Override

@@ -87,12 +87,12 @@ public class NguoiDungDao {
 				"VALUES (?, ?, ?, ?, ?, ?)"
 			);
 		) {
-			ps.setString(1, nd.getTenDangNhap());
-			ps.setString(2, nd.getMatKhau());
-			ps.setString(3, nd.getVaiTro());
-			ps.setString(4, nd.getHoTen());
-			ps.setString(5, nd.getEmail());
-			ps.setString(6, nd.getSoDienThoai());
+			ps.setNString(1, nd.getTenDangNhap());
+			ps.setNString(2, nd.getMatKhau());
+			ps.setNString(3, nd.getVaiTro());
+			ps.setNString(4, nd.getHoTen());
+			ps.setNString(5, nd.getEmail());
+			ps.setNString(6, nd.getSoDienThoai());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -111,12 +111,12 @@ public class NguoiDungDao {
 				"HoTen=?, Email=?, SoDienThoai=? WHERE MaNguoiDung=?"
 			);
 		) {
-			ps.setString(1, nd.getTenDangNhap());
-			ps.setString(2, nd.getMatKhau());
-			ps.setString(3, nd.getVaiTro());
-			ps.setString(4, nd.getHoTen());
-			ps.setString(5, nd.getEmail());
-			ps.setString(6, nd.getSoDienThoai());
+			ps.setNString(1, nd.getTenDangNhap());
+			ps.setNString(2, nd.getMatKhau());
+			ps.setNString(3, nd.getVaiTro());
+			ps.setNString(4, nd.getHoTen());
+			ps.setNString(5, nd.getEmail());
+			ps.setNString(6, nd.getSoDienThoai());
 			ps.setInt(7, nd.getMaNguoiDung());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {

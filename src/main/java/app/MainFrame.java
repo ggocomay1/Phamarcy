@@ -58,6 +58,13 @@ public class MainFrame extends JFrame {
 			
 			// Customize FlatLaf colors
 			javax.swing.UIManager.put("Panel.background", ColorScheme.BACKGROUND);
+			
+			// Force Font Tiếng Việt
+			java.awt.Font defaultFont = new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14);
+			javax.swing.UIManager.put("defaultFont", defaultFont);
+			javax.swing.UIManager.put("OptionPane.messageFont", defaultFont);
+			javax.swing.UIManager.put("Table.font", defaultFont);
+			
 			javax.swing.UIManager.put("Button.arc", 12);
 			javax.swing.UIManager.put("TextComponent.arc", 8);
 			javax.swing.UIManager.put("Component.focusWidth", 2);

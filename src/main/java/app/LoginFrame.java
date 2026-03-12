@@ -275,6 +275,14 @@ public class LoginFrame extends JFrame {
 		try {
 			UIManager.setLookAndFeel("com.formdev.flatlaf.FlatLightLaf");
 
+			// Set font Tiếng Việt chuẩn hệ thống cho toàn bộ UI
+			java.awt.Font defaultFont = new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14);
+			UIManager.put("defaultFont", defaultFont);
+			UIManager.put("ToolTip.font", defaultFont);
+			UIManager.put("OptionPane.messageFont", defaultFont);
+			UIManager.put("Table.font", defaultFont);
+			UIManager.put("TableHeader.font", defaultFont);
+
 			// Customize FlatLaf colors
 			UIManager.put("Panel.background", ColorScheme.BACKGROUND);
 			UIManager.put("Button.arc", 12);

@@ -25,6 +25,7 @@ public class ConnectDB {
 	private static final String DATABASE_NAME = "CuaHangThuoc_Batch";
 	private static final String USER = "sa";
 	private static final String PASSWORD = "123456";
+	private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Batch;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;sendStringParametersAsUnicode=true;useUnicode=true;";
 
 	// HikariCP DataSource (Connection Pool)
 	private static HikariDataSource dataSource;
@@ -44,7 +45,7 @@ public class ConnectDB {
 
 				// Format JDBC URL chuẩn cho SQL Server
 				var jdbcUrl = String.format(
-						"jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=true;trustServerCertificate=true",
+						"jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;sendStringParametersAsUnicode=true;useUnicode=true;",
 						serverName, PORT, DATABASE_NAME);
 
 				config.setJdbcUrl(jdbcUrl);

@@ -3,7 +3,6 @@ package panels;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
-import java.time.format.DateTimeFormatter;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -46,6 +45,7 @@ public class LoHangPanel extends JPanel {
 	private JComboBox<String> comboTrangThai;
 	private JButton btnCapNhatTrangThai;
 	private JButton btnLamMoi;
+	private java.util.List<LoHang> currentLoHangList = new java.util.ArrayList<>();
 
 	/**
 	 * Create the panel.
@@ -241,25 +241,54 @@ public class LoHangPanel extends JPanel {
 			}
 		});
 
+		// TableRowSorter for local page sorting
+		table.setRowSorter(new javax.swing.table.TableRowSorter<>(tableModel));
+
 		// ===== AUTO RESIZE + COLUMN WIDTHS =====
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		var cm = table.getColumnModel();
-		cm.getColumn(0).setPreferredWidth(55); // Mã lô
-		cm.getColumn(0).setMaxWidth(70);
-		cm.getColumn(1).setPreferredWidth(55); // Mã SP
-		cm.getColumn(1).setMaxWidth(70);
+		cm.getColumn(0).setPreferredWidth(40); // STT
+		cm.getColumn(0).setMaxWidth(50);
+		cm.getColumn(1).setPreferredWidth(200); // Tên Sản Phẩm
 		cm.getColumn(2).setPreferredWidth(80); // Số lô
 		cm.getColumn(2).setMaxWidth(100);
 		cm.getColumn(3).setPreferredWidth(100); // Hạn sử dụng
 		cm.getColumn(3).setMaxWidth(120);
-		cm.getColumn(4).setPreferredWidth(100); // Giá nhập
-		cm.getColumn(4).setMaxWidth(130);
-		cm.getColumn(5).setPreferredWidth(65); // SL nhập
-		cm.getColumn(5).setMaxWidth(80);
-		cm.getColumn(6).setPreferredWidth(65); // SL tồn
-		cm.getColumn(6).setMaxWidth(80);
-		cm.getColumn(7).setPreferredWidth(90); // Trạng thái
-		cm.getColumn(7).setMaxWidth(110);
+		cm.getColumn(4).setPreferredWidth(80); // Số lượng tồn
+		cm.getColumn(4).setMaxWidth(100);
+		cm.getColumn(5).setPreferredWidth(100); // Giá nhập
+		cm.getColumn(5).setMaxWidth(130);
+		cm.getColumn(6).setPreferredWidth(150); // Nhà cung cấp
+		cm.getColumn(7).setPreferredWidth(130); // Ngày giờ nhập
+		cm.getColumn(7).setMaxWidth(160);
+
+		// Renderer cho Giá nhập, Hạn sử dụng, Ngày giờ nhập
+		var customRenderer = new javax.swing.table.DefaultTableCellRenderer() {
+			@Override
+			public void setValue(Object value) {
+				if (value instanceof java.math.BigDecimal bd) {
+					setText(utils.FormatUtils.formatCurrency(bd));
+					setHorizontalAlignment(javax.swing.JLabel.RIGHT);
+				} else if (value instanceof java.time.LocalDate ld) {
+					setText(utils.FormatUtils.formatDate(ld));
+					setHorizontalAlignment(javax.swing.JLabel.CENTER);
+				} else if (value instanceof java.time.LocalDateTime ldt) {
+					setText(utils.FormatUtils.formatDateTime(ldt));
+					setHorizontalAlignment(javax.swing.JLabel.CENTER);
+				} else if (value instanceof Integer) {
+					setText(String.valueOf(value));
+					setHorizontalAlignment(javax.swing.JLabel.CENTER);
+				} else {
+					super.setValue(value);
+					setHorizontalAlignment(javax.swing.JLabel.LEFT);
+				}
+			}
+		};
+		
+		table.getColumnModel().getColumn(3).setCellRenderer(customRenderer); // HSD
+		table.getColumnModel().getColumn(4).setCellRenderer(customRenderer); // Stock
+		table.getColumnModel().getColumn(5).setCellRenderer(customRenderer); // Price
+		table.getColumnModel().getColumn(7).setCellRenderer(customRenderer); // Time
 
 		// Header styling
 		table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -274,17 +303,18 @@ public class LoHangPanel extends JPanel {
 
 	public void loadData() {
 		tableModel.setRowCount(0);
-		var list = loHangDao.getAll();
-		for (var lh : list) {
+		currentLoHangList = loHangDao.getAll();
+		int stt = 1;
+		for (var lh : currentLoHangList) {
 			tableModel.addRow(new Object[] {
-					lh.getMaLoHang(),
-					lh.getMaSanPham(),
+					stt++,
+					lh.getTenSanPham(),
 					lh.getSoLo(),
 					lh.getHanSuDung(),
-					lh.getGiaNhap(),
-					lh.getSoLuongNhap(),
 					lh.getSoLuongTon(),
-					lh.getTrangThai()
+					lh.getGiaNhap(),
+					lh.getTenNhaCungCap(),
+					lh.getThoiGianNhap()
 			});
 		}
 
@@ -299,9 +329,9 @@ public class LoHangPanel extends JPanel {
 	private void handleTableSelection() {
 		int row = table.getSelectedRow();
 		if (row >= 0) {
-			int maLo = (Integer) tableModel.getValueAt(row, 0);
-			var lh = loHangDao.findById(maLo);
-			if (lh != null) {
+			int modelRow = table.convertRowIndexToModel(row);
+			if (modelRow >= 0 && modelRow < currentLoHangList.size()) {
+				var lh = currentLoHangList.get(modelRow);
 				fillForm(lh);
 			}
 		}
@@ -323,10 +353,8 @@ public class LoHangPanel extends JPanel {
 		}
 
 		txtSoLo.setText(lh.getSoLo());
-		if (lh.getHanSuDung() != null) {
-			txtHanSuDung.setText(lh.getHanSuDung().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-		}
-		txtGiaNhap.setText(lh.getGiaNhap().toString());
+		txtHanSuDung.setText(utils.FormatUtils.formatDate(lh.getHanSuDung()));
+		txtGiaNhap.setText(utils.FormatUtils.formatCurrency(lh.getGiaNhap()));
 		txtSoLuongTon.setText(String.valueOf(lh.getSoLuongTon()));
 
 		// Set trạng thái

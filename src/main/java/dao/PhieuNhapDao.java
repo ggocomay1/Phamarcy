@@ -33,6 +33,47 @@ public class PhieuNhapDao {
 			// [Bước 4] Bọc toàn bộ vào 1 Transaction
 			con.setAutoCommit(false);
 
+			// ===== FORENSIC PROBE: Kiểm tra DB thực tế =====
+			String actualDb = con.getCatalog();
+			System.out.println("\n[FORENSIC] DB ĐANG KẾT NỐI: '" + actualDb + "'");
+			
+			// Kiểm tra bảng ChiTietPhieuNhap có tồn tại không
+			java.sql.DatabaseMetaData dbm = con.getMetaData();
+			try (ResultSet rsTbl = dbm.getTables(null, "dbo", "ChiTietPhieuNhap", null)) {
+				if (!rsTbl.next()) {
+					System.out.println("[FORENSIC] *** BẢNG 'ChiTietPhieuNhap' KHÔNG TỒN TẠI! Đang tự động tạo... ***");
+					try (java.sql.Statement stmtCreate = con.createStatement()) {
+						stmtCreate.executeUpdate(
+							"CREATE TABLE dbo.ChiTietPhieuNhap (" +
+							"MaCTPN INT IDENTITY(1,1) PRIMARY KEY, " +
+							"MaPhieuNhap INT NOT NULL, " +
+							"MaSanPham INT NOT NULL, " +
+							"SoLo NVARCHAR(50) NOT NULL, " +
+							"HanSuDung DATE NOT NULL, " +
+							"GiaNhap DECIMAL(18,2) NOT NULL, " +
+							"SoLuong INT NOT NULL, " +
+							"ThanhTien AS (SoLuong * GiaNhap) PERSISTED, " +
+							"CONSTRAINT FK_CTPN_PhieuNhap FOREIGN KEY (MaPhieuNhap) REFERENCES dbo.PhieuNhap(MaPhieuNhap), " +
+							"CONSTRAINT FK_CTPN_SanPham FOREIGN KEY (MaSanPham) REFERENCES dbo.SanPham(MaSanPham)" +
+							")"
+						);
+						System.out.println("[FORENSIC] ✓ Đã tạo bảng ChiTietPhieuNhap thành công!");
+					}
+				} else {
+					System.out.println("[FORENSIC] ✓ Bảng 'ChiTietPhieuNhap' đã tồn tại.");
+				}
+			}
+
+			// Kiểm tra thực thi cơ bản
+			try (java.sql.Statement sTest = con.createStatement();
+			     ResultSet rsTest = sTest.executeQuery("SELECT TOP 1 MaPhieuNhap FROM PhieuNhap")) {
+			    System.out.println("[FORENSIC] ✓ Đọc được bảng PhieuNhap.");
+			} catch (Exception e) {
+			    System.out.println("[FORENSIC] ✗ Lỗi đọc PhieuNhap: " + e.getMessage());
+			    throw e;
+			}
+			// ===== END FORENSIC =====
+
 			System.out.println("\n[Transaction DAO] === BẮT ĐẦU TRANSACTION NHẬP HÀNG ===");
 			
 			// [Bước 1] INSERT INTO PhieuNhap (Lấy Generated ID)
@@ -58,13 +99,18 @@ public class PhieuNhapDao {
 			System.out.println("[Transaction DAO] -> Đã lấy ID IDENTITY: MaPhieuNhap = " + maPhieuNhapMoi);
 
 			// Vòng lặp Chi tiết nhập kho
-			String sqlChiTiet = "INSERT INTO dbo.ChiTietPhieuNhap (MaPhieuNhap, MaSanPham, SoLo, HanSuDung, GiaNhap, SoLuong) VALUES (?, ?, ?, ?, ?, ?)";
-			String sqlCheckLo = "SELECT 1 FROM dbo.LoHang WHERE MaSanPham = ? AND SoLo = ?";
+			// Vòng lặp Chi tiết nhập kho
+			// *** SQL ĐỐI SOÁT: INSERT vào ChiTietPhieuNhap chỉ 6 cột, KHÔNG ghi ThanhTien (PERSISTED) ***
+			// Bỏ tiền tố dbo. để tránh lỗi schema mismatch nêú user login bằng role không thuộc dbo
+			String sqlChiTiet = "INSERT INTO ChiTietPhieuNhap (MaPhieuNhap, MaSanPham, SoLo, HanSuDung, GiaNhap, SoLuong) VALUES (?, ?, ?, ?, ?, ?)";
+			System.out.println("[Transaction DAO] SQL ChiTietPhieuNhap: " + sqlChiTiet);
+			
+			String sqlCheckLo = "SELECT 1 FROM dbo.LoHang WHERE MaSanPham = ? AND SoLo = ? AND HanSuDung = ?";
 			String sqlUpdateLo = "UPDATE dbo.LoHang SET SoLuongTon = SoLuongTon + ?, SoLuongNhap = SoLuongNhap + ?, "
-								+ "HanSuDung = CASE WHEN HanSuDung < ? THEN ? ELSE HanSuDung END, GiaNhap = ?, TrangThai = N'Đang bán' "
-								+ "WHERE MaSanPham = ? AND SoLo = ?";
-			String sqlInsertLo = "INSERT INTO dbo.LoHang (MaSanPham, SoLo, MaNCC, MaPhieuNhap, HanSuDung, GiaNhap, SoLuongNhap, SoLuongTon) "
-								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+								+ "TongSoVien_Lo = ISNULL(TongSoVien_Lo, 0) + ?, ThoiGianNhap = ?, MaNCC = ? "
+								+ "WHERE MaSanPham = ? AND SoLo = ? AND HanSuDung = ?";
+			String sqlInsertLo = "INSERT INTO dbo.LoHang (MaSanPham, SoLo, MaNCC, MaPhieuNhap, HanSuDung, GiaNhap, SoLuongNhap, SoLuongTon, LoaiHinhBan, ThoiGianNhap, DonViNhap, SoViTrenHop, SoVienTrenVi, TongSoVien_Lo) "
+								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 			try (PreparedStatement psCT = con.prepareStatement(sqlChiTiet);
 				 PreparedStatement psCheckLo = con.prepareStatement(sqlCheckLo);
@@ -77,8 +123,8 @@ public class PhieuNhapDao {
 					ChiTietPhieuNhap ct = chiTietList.get(i);
 					System.out.println("[Transaction DAO] Xử lý Dòng " + i + ": Sản phẩm ID " + ct.getMaSanPham() + ", Lô " + ct.getSoLo());
 
-					// 1. Lưu ChiTietPhieuNhap
-					// [Bước 2] Dữ liệu tiền (GiaNhap) là BigDecimal chuẩn, chống tràn số
+					// 1. Lưu ChiTietPhieuNhap (6 params, KHÔNG ghi ThanhTien)
+					// Param 1=MaPhieuNhap, 2=MaSanPham, 3=SoLo, 4=HanSuDung, 5=GiaNhap, 6=SoLuong
 					psCT.setInt(1, maPhieuNhapMoi);
 					psCT.setInt(2, ct.getMaSanPham());
 					psCT.setNString(3, ct.getSoLo());
@@ -92,26 +138,25 @@ public class PhieuNhapDao {
 					tongTienHoaDon = tongTienHoaDon.add(thanhTienDong);
 
 					// 2. [Bước 3] Thêm lệnh INSERT hoặc UPDATE vào bảng 'LoHang'
-					boolean isExistLo = false;
-					psCheckLo.setInt(1, ct.getMaSanPham());
-					psCheckLo.setNString(2, ct.getSoLo());
-					try (ResultSet rsLo = psCheckLo.executeQuery()) {
-						if (rsLo.next()) isExistLo = true;
-					}
-
-					if (isExistLo) {
-						// Đã có lô -> update cộng dồn
-						psUpdLo.setInt(1, ct.getSoLuong());
+					if (ct.isMergeBatch()) {
+						// Đã có lô và người dùng chọn CỘNG DỒN -> update
+						String loaiHB = ct.getLoaiHinhBan() != null ? ct.getLoaiHinhBan() : "Bán lẻ";
+						int soLuongTonThem = loaiHB.equals("Bán sỉ") ? ct.getSoLuong() : ct.getTongSoVien();
+						psUpdLo.setInt(1, soLuongTonThem);
 						psUpdLo.setInt(2, ct.getSoLuong());
-						psUpdLo.setDate(3, java.sql.Date.valueOf(ct.getHanSuDung()));
-						psUpdLo.setDate(4, java.sql.Date.valueOf(ct.getHanSuDung()));
-						psUpdLo.setBigDecimal(5, ct.getGiaNhap());
+						psUpdLo.setInt(3, ct.getTongSoVien());
+						psUpdLo.setTimestamp(4, java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+						if (maNCC != null) psUpdLo.setInt(5, maNCC);
+						else psUpdLo.setNull(5, java.sql.Types.INTEGER);
 						psUpdLo.setInt(6, ct.getMaSanPham());
 						psUpdLo.setNString(7, ct.getSoLo());
+						psUpdLo.setDate(8, java.sql.Date.valueOf(ct.getHanSuDung()));
 						psUpdLo.executeUpdate();
-						System.out.println("[Transaction DAO] -> Cập nhật cộng tồn Lô hàng cũ: " + ct.getSoLo());
+						System.out.println("[Transaction DAO] -> CẬP NHẬT CỘNG DỒN Lô hàng cũ: " + ct.getSoLo() + " (HSD: " + ct.getHanSuDung() + ")");
 					} else {
 						// Lô mới -> INSERT
+						String loaiHB = ct.getLoaiHinhBan() != null ? ct.getLoaiHinhBan() : "Bán lẻ";
+						int soLuongTon = loaiHB.equals("Bán sỉ") ? ct.getSoLuong() : ct.getTongSoVien();
 						psInsLo.setInt(1, ct.getMaSanPham());
 						psInsLo.setNString(2, ct.getSoLo());
 						if (maNCC != null) psInsLo.setInt(3, maNCC);
@@ -120,7 +165,13 @@ public class PhieuNhapDao {
 						psInsLo.setDate(5, java.sql.Date.valueOf(ct.getHanSuDung()));
 						psInsLo.setBigDecimal(6, ct.getGiaNhap());
 						psInsLo.setInt(7, ct.getSoLuong()); // SoLuongNhap
-						psInsLo.setInt(8, ct.getSoLuong()); // SoLuongTon
+						psInsLo.setInt(8, soLuongTon); // SoLuongTon
+						psInsLo.setNString(9, loaiHB);
+						psInsLo.setTimestamp(10, java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+						psInsLo.setNString(11, ct.getDonViNhap());
+						psInsLo.setInt(12, ct.getSoViTrenHop());
+						psInsLo.setInt(13, ct.getSoVienTrenVi());
+						psInsLo.setInt(14, ct.getTongSoVien()); // TongSoVien
 						psInsLo.executeUpdate();
 						System.out.println("[Transaction DAO] -> THÊM MỚI Lô hàng: " + ct.getSoLo());
 					}
