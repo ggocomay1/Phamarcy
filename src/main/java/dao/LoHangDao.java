@@ -21,17 +21,16 @@ public class LoHangDao {
 	public List<LoHang> getAll() {
 		List<LoHang> list = new ArrayList<>();
 		try (
-			var con = ConnectDB.getCon();
-			var stmt = con.createStatement();
-			var rs = stmt.executeQuery(
-				"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
-				"FROM LoHang lh " +
-				"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham " +
-				"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
-				"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
-				"ORDER BY lh.HanSuDung ASC, lh.ThoiGianNhap ASC"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery(
+						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
+								"FROM LoHang lh " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.TrangThai <> N'Ngưng bán' " +
+								"ORDER BY lh.HanSuDung ASC, lh.ThoiGianNhap ASC");) {
 			while (rs.next()) {
 				list.add(mapResultSet(rs));
 			}
@@ -47,17 +46,15 @@ public class LoHangDao {
 	public List<LoHang> getByMaSanPham(int maSanPham) {
 		List<LoHang> list = new ArrayList<>();
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
-				"FROM LoHang lh " +
-				"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham " +
-				"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
-				"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
-				"WHERE lh.MaSanPham = ? " +
-				"ORDER BY lh.HanSuDung ASC, lh.ThoiGianNhap ASC"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
+								"FROM LoHang lh " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.MaSanPham = ? AND lh.TrangThai <> N'Ngưng bán' " +
+								"ORDER BY lh.HanSuDung ASC, lh.ThoiGianNhap ASC");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			while (rs.next()) {
@@ -75,14 +72,12 @@ public class LoHangDao {
 	public List<LoHang> getActiveBatchesByMaSP(int maSanPham) {
 		List<LoHang> list = new ArrayList<>();
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT * FROM LoHang " +
-				"WHERE MaSanPham = ? " +
-				"AND SoLuongTon > 0 " +
-				"ORDER BY HanSuDung ASC"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT * FROM LoHang " +
+								"WHERE MaSanPham = ? " +
+								"AND SoLuongTon > 0 AND TrangThai <> N'Ngưng bán' " +
+								"ORDER BY HanSuDung ASC");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			while (rs.next()) {
@@ -100,16 +95,14 @@ public class LoHangDao {
 	public List<LoHang> getAvailableForSale(int maSanPham) {
 		List<LoHang> list = new ArrayList<>();
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT * FROM LoHang " +
-				"WHERE MaSanPham = ? " +
-				"AND SoLuongTon > 0 " +
-				"AND TrangThai = N'Đang bán' " +
-				"AND HanSuDung >= CAST(GETDATE() AS DATE) " +
-				"ORDER BY HanSuDung ASC, NgayNhap ASC"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT * FROM LoHang " +
+								"WHERE MaSanPham = ? " +
+								"AND SoLuongTon > 0 " +
+								"AND TrangThai = N'Đang bán' " +
+								"AND HanSuDung >= CAST(GETDATE() AS DATE) " +
+								"ORDER BY HanSuDung ASC, NgayNhap ASC");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			while (rs.next()) {
@@ -126,16 +119,14 @@ public class LoHangDao {
 	 */
 	public LoHang findById(int maLoHang) {
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
-				"FROM LoHang lh " +
-				"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham " +
-				"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
-				"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
-				"WHERE lh.MaLoHang = ?"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
+								"FROM LoHang lh " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.MaLoHang = ? AND lh.TrangThai <> N'Ngưng bán'");) {
 			ps.setInt(1, maLoHang);
 			var rs = ps.executeQuery();
 			if (rs.next()) {
@@ -152,17 +143,15 @@ public class LoHangDao {
 	 */
 	public LoHang findByMaSPAndSoLo(int maSanPham, String soLo) {
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
-				"FROM LoHang lh " +
-				"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham " +
-				"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
-				"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
-				"WHERE lh.MaSanPham = ? AND lh.SoLo = ? " +
-				"ORDER BY lh.HanSuDung ASC"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
+								"FROM LoHang lh " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.MaSanPham = ? AND lh.SoLo = ? AND lh.TrangThai <> N'Ngưng bán' " +
+								"ORDER BY lh.HanSuDung ASC");) {
 			ps.setInt(1, maSanPham);
 			ps.setString(2, soLo);
 			var rs = ps.executeQuery();
@@ -181,16 +170,14 @@ public class LoHangDao {
 	 */
 	public LoHang findByMaSPSoLoHSD(int maSanPham, String soLo, java.time.LocalDate hanSuDung) {
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement(
-				"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
-				"FROM LoHang lh " +
-				"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham " +
-				"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
-				"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
-				"WHERE lh.MaSanPham = ? AND lh.SoLo = ? AND lh.HanSuDung = ?"
-			);
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(
+						"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
+								"FROM LoHang lh " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.MaSanPham = ? AND lh.SoLo = ? AND lh.HanSuDung = ? AND lh.TrangThai <> N'Ngưng bán'");) {
 			ps.setInt(1, maSanPham);
 			ps.setString(2, soLo);
 			ps.setDate(3, java.sql.Date.valueOf(hanSuDung));
@@ -209,9 +196,8 @@ public class LoHangDao {
 	 */
 	public boolean updateTrangThai(int maLoHang, String trangThai) {
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement("UPDATE LoHang SET TrangThai = ? WHERE MaLoHang = ?");
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("UPDATE LoHang SET TrangThai = ? WHERE MaLoHang = ?");) {
 			ps.setString(1, trangThai);
 			ps.setInt(2, maLoHang);
 			return ps.executeUpdate() > 0;
@@ -226,9 +212,8 @@ public class LoHangDao {
 	 */
 	public boolean delete(int maLoHang) {
 		try (
-			var con = ConnectDB.getCon();
-			var ps = con.prepareStatement("DELETE FROM LoHang WHERE MaLoHang = ?");
-		) {
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("UPDATE LoHang SET TrangThai = N'Ngưng bán' WHERE MaLoHang = ?");) {
 			ps.setInt(1, maLoHang);
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
@@ -263,7 +248,7 @@ public class LoHangDao {
 		lh.setGiaNhap(rs.getBigDecimal("GiaNhap"));
 		lh.setSoLuongNhap(rs.getInt("SoLuongNhap"));
 		lh.setSoLuongTon(rs.getInt("SoLuongTon"));
-		
+
 		// Map NgayNhapPN if available, otherwise fallback to NgayNhap/ThoiGianNhap
 		try {
 			java.sql.Timestamp tsPN = rs.getTimestamp("NgayNhapPN");
@@ -271,26 +256,52 @@ public class LoHangDao {
 				lh.setNgayNhap(tsPN.toLocalDateTime());
 			} else {
 				java.sql.Timestamp tsLH = rs.getTimestamp("NgayNhap");
-				if (tsLH != null) lh.setNgayNhap(tsLH.toLocalDateTime());
+				if (tsLH != null)
+					lh.setNgayNhap(tsLH.toLocalDateTime());
 			}
-		} catch (Exception ignored) {}
-		
+		} catch (Exception ignored) {
+		}
+
 		lh.setTrangThai(rs.getString("TrangThai"));
 
 		// Các cột mở rộng
-		try { lh.setLoaiHinhBan(rs.getString("LoaiHinhBan")); } catch (Exception ignored) {}
-		try { 
+		try {
+			lh.setLoaiHinhBan(rs.getString("LoaiHinhBan"));
+		} catch (Exception ignored) {
+		}
+		try {
 			var ts = rs.getTimestamp("ThoiGianNhap");
-			if (ts != null) lh.setThoiGianNhap(ts.toLocalDateTime());
-			else if (lh.getNgayNhap() != null) lh.setThoiGianNhap(lh.getNgayNhap());
-		} catch (Exception ignored) {}
-		
-		try { lh.setTenSanPham(rs.getString("TenSanPham")); } catch (Exception ignored) {}
-		try { lh.setTenNhaCungCap(rs.getString("TenNCC")); } catch (Exception ignored) {}
-		try { lh.setDonViNhap(rs.getString("DonViNhap")); } catch (Exception ignored) {}
-		try { lh.setSoViTrenHop(rs.getInt("SoViTrenHop")); } catch (Exception ignored) {}
-		try { lh.setSoVienTrenVi(rs.getInt("SoVienTrenVi")); } catch (Exception ignored) {}
-		try { lh.setTongSoVien(rs.getInt("TongSoVien_Lo")); } catch (Exception ignored) {}
+			if (ts != null)
+				lh.setThoiGianNhap(ts.toLocalDateTime());
+			else if (lh.getNgayNhap() != null)
+				lh.setThoiGianNhap(lh.getNgayNhap());
+		} catch (Exception ignored) {
+		}
+
+		try {
+			lh.setTenSanPham(rs.getString("TenSanPham"));
+		} catch (Exception ignored) {
+		}
+		try {
+			lh.setTenNhaCungCap(rs.getString("TenNCC"));
+		} catch (Exception ignored) {
+		}
+		try {
+			lh.setDonViNhap(rs.getString("DonViNhap"));
+		} catch (Exception ignored) {
+		}
+		try {
+			lh.setSoViTrenHop(rs.getInt("SoViTrenHop"));
+		} catch (Exception ignored) {
+		}
+		try {
+			lh.setSoVienTrenVi(rs.getInt("SoVienTrenVi"));
+		} catch (Exception ignored) {
+		}
+		try {
+			lh.setTongSoVien(rs.getInt("TongSoVien_Lo"));
+		} catch (Exception ignored) {
+		}
 
 		return lh;
 	}

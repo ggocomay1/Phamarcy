@@ -22,8 +22,8 @@ public class SanPhamDao {
 	public List<SanPham> getAll() {
 		List<SanPham> list = new ArrayList<>();
 		String sql = "SELECT sp.*, "
-				+ "(SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham) as TongTon, "
-				+ "(SELECT MIN(HanSuDung) FROM LoHang lh2 WHERE lh2.MaSanPham = sp.MaSanPham AND lh2.SoLuongTon > 0) as HanSuDungGanNhat "
+				+ "(SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham AND lh.TrangThai <> N'Ngưng bán') as TongTon, "
+				+ "(SELECT MIN(HanSuDung) FROM LoHang lh2 WHERE lh2.MaSanPham = sp.MaSanPham AND lh2.SoLuongTon > 0 AND lh2.TrangThai <> N'Ngưng bán') as HanSuDungGanNhat "
 				+ "FROM SanPham sp WHERE sp.TrangThai = 1 ORDER BY sp.TenSanPham";
 		try (
 				var con = ConnectDB.getCon();
@@ -76,19 +76,29 @@ public class SanPhamDao {
 		String countQuery = "SELECT COUNT(*) FROM SanPham sp " + whereClause;
 
 		String sortExp = "sp.MaSanPham";
-		if ("TenSanPham".equals(sortColumn)) sortExp = "sp.TenSanPham";
-		else if ("GiaBanDeXuat".equals(sortColumn)) sortExp = "sp.GiaBanDeXuat";
-		else if ("MoTa".equals(sortColumn)) sortExp = "sp.MoTa";
-		else if ("DonViTinh".equals(sortColumn)) sortExp = "sp.DonViTinh";
-		else if ("MucTonToiThieu".equals(sortColumn)) sortExp = "sp.MucTonToiThieu";
+		if ("TenSanPham".equals(sortColumn))
+			sortExp = "sp.TenSanPham";
+		else if ("GiaBanDeXuat".equals(sortColumn))
+			sortExp = "sp.GiaBanDeXuat";
+		else if ("MoTa".equals(sortColumn))
+			sortExp = "sp.MoTa";
+		else if ("DonViTinh".equals(sortColumn))
+			sortExp = "sp.DonViTinh";
+		else if ("MucTonToiThieu".equals(sortColumn))
+			sortExp = "sp.MucTonToiThieu";
+		else if ("TongTon".equals(sortColumn))
+			sortExp = "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham AND tk.TrangThai <> N'Ngưng bán'), 0)";
+		else if ("HanSuDungGanNhat".equals(sortColumn))
+			sortExp = "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0 AND tk2.TrangThai <> N'Ngưng bán')";
 
 		String sql = "SELECT sp.MaSanPham, sp.TenSanPham, sp.GiaBanDeXuat, sp.DonViTinh, "
 				+ "sp.MoTa, sp.MucTonToiThieu, "
-				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham), 0) AS TongTon, "
-				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0) AS HanSuDungGanNhat "
+				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham AND tk.TrangThai <> N'Ngưng bán'), 0) AS TongTon, "
+				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0 AND tk2.TrangThai <> N'Ngưng bán') AS HanSuDungGanNhat "
 				+ " FROM SanPham sp "
 				+ whereClause
-				+ " ORDER BY " + sortExp + " " + (sortOrder != null && sortOrder.equalsIgnoreCase("DESC") ? "DESC" : "ASC")
+				+ " ORDER BY " + sortExp + " "
+				+ (sortOrder != null && sortOrder.equalsIgnoreCase("DESC") ? "DESC" : "ASC")
 				+ " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
 		try (var con = ConnectDB.getCon()) {
@@ -105,7 +115,8 @@ public class SanPhamDao {
 					psCount.setString(paramIndex++, dvt);
 				}
 				var rsCount = psCount.executeQuery();
-				if (rsCount.next()) totalRows = rsCount.getInt(1);
+				if (rsCount.next())
+					totalRows = rsCount.getInt(1);
 			}
 
 			// Fetch items
@@ -132,7 +143,7 @@ public class SanPhamDao {
 					sp.setGiaBanDeXuat(rs.getBigDecimal("GiaBanDeXuat"));
 					sp.setMoTa(rs.getString("MoTa"));
 					sp.setMucTonToiThieu(rs.getInt("MucTonToiThieu"));
-					sp.setTongTon(rs.getInt("TongTon")); 
+					sp.setTongTon(rs.getInt("TongTon"));
 					if (rs.getDate("HanSuDungGanNhat") != null) {
 						sp.setHanSuDungGanNhat(rs.getDate("HanSuDungGanNhat").toLocalDate());
 					}
@@ -140,7 +151,8 @@ public class SanPhamDao {
 				}
 			}
 			totalPages = (int) Math.ceil((double) totalRows / size);
-			if (totalPages == 0) totalPages = 1;
+			if (totalPages == 0)
+				totalPages = 1;
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -155,13 +167,14 @@ public class SanPhamDao {
 	public SanPham findById(int maSanPham) {
 		try (
 				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE MaSanPham = ? AND DaXoa = 0");) {
+				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE MaSanPham = ? AND TrangThai = 1");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			if (rs.next()) {
 				var sp = mapResultSet(rs);
 				// Lấy thêm tổng tồn do hàm findById select thẳng từ SanPham không qua view
-				try (var psTon = con.prepareStatement("SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang WHERE MaSanPham = ?")) {
+				try (var psTon = con
+						.prepareStatement("SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang WHERE MaSanPham = ?")) {
 					psTon.setInt(1, maSanPham);
 					var rsTon = psTon.executeQuery();
 					if (rsTon.next()) {
@@ -184,7 +197,7 @@ public class SanPhamDao {
 				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham), 0) AS TongTon, "
 				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0) AS HanSuDungGanNhat "
 				+ "FROM SanPham sp "
-				+ "WHERE sp.MaSanPham = ?";
+				+ "WHERE sp.MaSanPham = ? AND sp.TrangThai = 1";
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(sql)) {
@@ -225,7 +238,8 @@ public class SanPhamDao {
 	public SanPham findByNameExact(String exactName) {
 		try (
 				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE TrangThai = 1 AND TenSanPham = ? ORDER BY TenSanPham ASC")) {
+				var ps = con.prepareStatement(
+						"SELECT * FROM SanPham WHERE TrangThai = 1 AND TenSanPham = ? ORDER BY TenSanPham ASC")) {
 			ps.setNString(1, exactName);
 			var rs = ps.executeQuery();
 			if (rs.next()) {
@@ -260,7 +274,7 @@ public class SanPhamDao {
 	 */
 	public boolean resurrect(int maSanPham) {
 		try (var con = ConnectDB.getCon();
-			 var ps = con.prepareStatement("UPDATE SanPham SET TrangThai = 1, DaXoa = 0 WHERE MaSanPham = ?")) {
+				var ps = con.prepareStatement("UPDATE SanPham SET TrangThai = 1, DaXoa = 0 WHERE MaSanPham = ?")) {
 			ps.setInt(1, maSanPham);
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
@@ -276,8 +290,8 @@ public class SanPhamDao {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu) " +
-								"VALUES (?, ?, ?, ?, ?)");) {
+						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu, LoaiSanPham) " +
+								"VALUES (?, ?, ?, ?, ?, N'Khác')");) {
 			ps.setNString(1, sp.getTenSanPham());
 			ps.setNString(2, sp.getDonViTinh());
 			ps.setBigDecimal(3, sp.getGiaBanDeXuat());
@@ -298,8 +312,8 @@ public class SanPhamDao {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu) " +
-								"VALUES (?, ?, ?, ?, ?)",
+						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu, LoaiSanPham) " +
+								"VALUES (?, ?, ?, ?, ?, N'Khác')",
 						java.sql.Statement.RETURN_GENERATED_KEYS);) {
 			ps.setNString(1, sp.getTenSanPham());
 			ps.setNString(2, sp.getDonViTinh());
@@ -324,7 +338,7 @@ public class SanPhamDao {
 		String sql = "UPDATE SanPham SET TenSanPham=?, GiaBanDeXuat=?, DonViTinh=?, " +
 				"MoTa=?, MucTonToiThieu=? WHERE MaSanPham=?";
 		try (var con = ConnectDB.getCon();
-			 var ps = con.prepareStatement(sql);) {
+				var ps = con.prepareStatement(sql);) {
 			ps.setString(1, sp.getTenSanPham());
 			ps.setBigDecimal(2, sp.getGiaBanDeXuat());
 			ps.setString(3, sp.getDonViTinh());
@@ -340,7 +354,8 @@ public class SanPhamDao {
 
 	/**
 	 * [Requirement: SYNC_PRODUCT_QUANTITY]
-	 * Tính lại tổng tồn kho của 1 sản phẩm từ bảng LoHang và cập nhập vào bảng SanPham
+	 * Tính lại tổng tồn kho của 1 sản phẩm từ bảng LoHang và cập nhập vào bảng
+	 * SanPham
 	 */
 	public boolean updateTotalQuantity(int maSanPham) {
 		String sql = "UPDATE SanPham SET SoLuongTon = (" +
@@ -348,7 +363,7 @@ public class SanPhamDao {
 				"WHERE MaSanPham = ? AND TrangThai <> N'Ngưng bán'" +
 				") WHERE MaSanPham = ?";
 		try (var con = ConnectDB.getCon();
-			 var ps = con.prepareStatement(sql)) {
+				var ps = con.prepareStatement(sql)) {
 			ps.setInt(1, maSanPham);
 			ps.setInt(2, maSanPham);
 			return ps.executeUpdate() > 0;
@@ -381,7 +396,8 @@ public class SanPhamDao {
 		try (
 				var con = ConnectDB.getCon();
 				var stmt = con.createStatement();
-				var rs = stmt.executeQuery("SELECT DISTINCT DonViTinh FROM SanPham WHERE TrangThai = 1 AND DonViTinh IS NOT NULL AND DonViTinh <> '' ORDER BY DonViTinh");) {
+				var rs = stmt.executeQuery(
+						"SELECT DISTINCT DonViTinh FROM SanPham WHERE TrangThai = 1 AND DonViTinh IS NOT NULL AND DonViTinh <> '' ORDER BY DonViTinh");) {
 			while (rs.next()) {
 				list.add(rs.getString(1));
 			}
@@ -407,23 +423,27 @@ public class SanPhamDao {
 		if (rs.getTimestamp("NgayTao") != null) {
 			sp.setNgayTao(rs.getTimestamp("NgayTao").toLocalDateTime());
 		}
-		
+
 		// Map thêm các trường ảo (nếu có trong câu query)
 		try {
 			sp.setTongTon(rs.getInt("TongTon"));
-		} catch (Exception ignore) {}
+		} catch (Exception ignore) {
+		}
 
 		// Try both alias names for HSD column
 		try {
 			java.sql.Date hsd = rs.getDate("HanSuDungGanNhat");
-			if (hsd != null) sp.setHanSuDungGanNhat(hsd.toLocalDate());
+			if (hsd != null)
+				sp.setHanSuDungGanNhat(hsd.toLocalDate());
 		} catch (Exception e1) {
 			try {
 				java.sql.Date hsd = rs.getDate("HanSDGanNhat");
-				if (hsd != null) sp.setHanSuDungGanNhat(hsd.toLocalDate());
-			} catch (Exception ignore) {}
+				if (hsd != null)
+					sp.setHanSuDungGanNhat(hsd.toLocalDate());
+			} catch (Exception ignore) {
+			}
 		}
-		
+
 		return sp;
 	}
 }
