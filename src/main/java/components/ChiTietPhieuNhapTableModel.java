@@ -18,7 +18,6 @@ public class ChiTietPhieuNhapTableModel extends DefaultTableModel {
 		addColumn("Hạn sử dụng");
 		addColumn("Giá nhập");
 		addColumn("Số lượng");
-		addColumn("Thành tiền");
 		addColumn("ĐVT");
 		addColumn("Loại hình");
 	}
@@ -33,9 +32,8 @@ public class ChiTietPhieuNhapTableModel extends DefaultTableModel {
 			case 4 -> java.time.LocalDate.class; // Hạn sử dụng
 			case 5 -> java.math.BigDecimal.class; // Giá nhập
 			case 6 -> Integer.class;  // Số lượng
-			case 7 -> java.math.BigDecimal.class; // Thành tiền
-			case 8 -> String.class;   // ĐVT
-			case 9 -> String.class;   // Loại hình
+			case 7 -> String.class;   // ĐVT
+			case 8 -> String.class;   // Loại hình
 			default -> String.class;
 		};
 	}

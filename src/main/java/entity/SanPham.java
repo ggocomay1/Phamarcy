@@ -12,7 +12,6 @@ public class SanPham {
 	private String tenSanPham;
 	private String donViTinh;
 	private BigDecimal giaBanDeXuat;
-	private String loaiSanPham;
 	private String moTa;
 	private int mucTonToiThieu;
 
@@ -27,13 +26,12 @@ public class SanPham {
 
 	public SanPham() {}
 
-	public SanPham(int maSanPham, String tenSanPham, String donViTinh, BigDecimal giaBanDeXuat, String loaiSanPham, String moTa,
+	public SanPham(int maSanPham, String tenSanPham, String donViTinh, BigDecimal giaBanDeXuat, String moTa,
 			int mucTonToiThieu, int tongTon, LocalDate hanSuDungGanNhat, String loaiHinhBan, boolean daXoa, LocalDateTime ngayTao) {
 		this.maSanPham = maSanPham;
 		this.tenSanPham = tenSanPham;
 		this.donViTinh = donViTinh;
 		this.giaBanDeXuat = giaBanDeXuat;
-		this.loaiSanPham = loaiSanPham;
 		this.moTa = moTa;
 		this.mucTonToiThieu = mucTonToiThieu;
 		this.tongTon = tongTon;
@@ -54,9 +52,6 @@ public class SanPham {
 
 	public String getDonViTinh() { return donViTinh; }
 	public void setDonViTinh(String donViTinh) { this.donViTinh = donViTinh; }
-
-	public String getLoaiSanPham() { return loaiSanPham; }
-	public void setLoaiSanPham(String loaiSanPham) { this.loaiSanPham = loaiSanPham; }
 
 	public String getMoTa() { return moTa; }
 	public void setMoTa(String moTa) { this.moTa = moTa; }

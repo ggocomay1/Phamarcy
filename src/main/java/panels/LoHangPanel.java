@@ -44,6 +44,7 @@ public class LoHangPanel extends JPanel {
 	private JTextField txtSoLuongTon;
 	private JComboBox<String> comboTrangThai;
 	private JButton btnCapNhatTrangThai;
+	private JButton btnXoaLo;
 	private JButton btnLamMoi;
 	private java.util.List<LoHang> currentLoHangList = new java.util.ArrayList<>();
 
@@ -202,6 +203,13 @@ public class LoHangPanel extends JPanel {
 		btnCapNhatTrangThai.setBounds(20, y, 320, 40);
 		btnCapNhatTrangThai.addActionListener(e -> handleCapNhatTrangThai());
 		panel.add(btnCapNhatTrangThai);
+
+		y += 50;
+
+		btnXoaLo = UIHelper.createDangerButton("Xóa lô hàng này");
+		btnXoaLo.setBounds(20, y, 320, 40);
+		btnXoaLo.addActionListener(e -> handleXoaLo());
+		panel.add(btnXoaLo);
 
 		y += 50;
 
@@ -384,6 +392,45 @@ public class LoHangPanel extends JPanel {
 			loadData();
 		} else {
 			JOptionPane.showMessageDialog(this, "Cập nhật trạng thái thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void handleXoaLo() {
+		if (txtMaLo.getText().isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Vui lòng chọn lô hàng cần xóa!", "Thông báo",
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		int confirm = JOptionPane.showConfirmDialog(this, 
+				"Bạn có chắc chắn muốn xóa lô hàng này?\nThao tác này sẽ làm giảm tổng tồn kho của sản phẩm!", 
+				"Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		
+		if (confirm != JOptionPane.YES_OPTION) return;
+
+		int maLo = Integer.parseInt(txtMaLo.getText());
+		
+		// Lấy MaSanPham để update tồn kho sau khi xóa
+		int modelRow = table.convertRowIndexToModel(table.getSelectedRow());
+		int maSanPham = currentLoHangList.get(modelRow).getMaSanPham();
+
+		if (loHangDao.delete(maLo)) {
+			// [Requirement: SYNC_PRODUCT_QUANTITY] 
+			sanPhamDao.updateTotalQuantity(maSanPham);
+			
+			JOptionPane.showMessageDialog(this, "Xóa lô hàng thành công!", "Thông báo",
+					JOptionPane.INFORMATION_MESSAGE);
+			
+			// Refresh tất cả các panel (Requirement: REFRESH_AFTER_IMPORT)
+			var top = javax.swing.SwingUtilities.getWindowAncestor(this);
+			if (top instanceof app.MainFrame) {
+				((app.MainFrame) top).refreshAllData();
+			} else {
+				handleLamMoi();
+				loadData();
+			}
+		} else {
+			JOptionPane.showMessageDialog(this, "Xóa lô hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

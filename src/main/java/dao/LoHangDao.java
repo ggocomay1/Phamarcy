@@ -222,6 +222,22 @@ public class LoHangDao {
 	}
 
 	/**
+	 * Xóa lô hàng
+	 */
+	public boolean delete(int maLoHang) {
+		try (
+			var con = ConnectDB.getCon();
+			var ps = con.prepareStatement("DELETE FROM LoHang WHERE MaLoHang = ?");
+		) {
+			ps.setInt(1, maLoHang);
+			return ps.executeUpdate() > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	/**
 	 * Map ResultSet to LoHang entity
 	 */
 	private LoHang mapResultSet(ResultSet rs) throws Exception {

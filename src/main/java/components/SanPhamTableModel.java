@@ -4,28 +4,28 @@ import javax.swing.table.DefaultTableModel;
 
 /**
  * Table model cho SanPham - đồng bộ DB CuaHangThuoc_Batch
- * Cột: Mã SP | Tên sản phẩm | Giá bán (VND) | Đơn vị tính | Tổng tồn | Hạn SD gần nhất
+ * Cột: STT | Mã SP (ẩn) | Tên sản phẩm | Giá bán (VND) | Đơn vị tính | Tổng tồn | Hạn SD gần nhất
  * 
  * @author Generated
- * @version 2.0
+ * @version 4.0
  */
 public class SanPhamTableModel extends DefaultTableModel {
 
 	public SanPhamTableModel() {
 		addColumn("STT");
-		addColumn("Mã SP");
-		addColumn("Tên sản phẩm");
-		addColumn("Giá bán");
-		addColumn("Đơn vị tính");
-		addColumn("Tổng tồn");
-		addColumn("Hạn SD gần nhất");
+		addColumn("Mã SP");          // index 1 - ẨN trên UI, dùng nội bộ
+		addColumn("Tên sản phẩm");   // index 2
+		addColumn("Giá bán");        // index 3
+		addColumn("Đơn vị tính");    // index 4
+		addColumn("Tổng tồn");       // index 5
+		addColumn("Hạn SD gần nhất");// index 6
 	}
 
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
 		return switch (columnIndex) {
 			case 0 -> Integer.class;              // STT
-			case 1 -> Integer.class;              // Mã SP
+			case 1 -> Integer.class;              // Mã SP (ẩn)
 			case 2 -> String.class;               // Tên sản phẩm
 			case 3 -> String.class;               // Giá bán (format VND)
 			case 4 -> String.class;               // Đơn vị tính

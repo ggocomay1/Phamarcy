@@ -35,6 +35,8 @@ import entity.SanPham;
 public class ProductDetailDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	private LoHangDao batchDao = new LoHangDao();
+	private DefaultTableModel tableModel;
+	private JTable table;
 
 	public ProductDetailDialog(SanPham sp, java.awt.Window owner) {
 		super(owner, "Chi tiết Sản phẩm (Profile)", ModalityType.APPLICATION_MODAL);
@@ -75,9 +77,8 @@ public class ProductDetailDialog extends JDialog {
 		
 		addGridField(leftPanel, "Mã sản phẩm:", String.valueOf(sp.getMaSanPham()), 0, false, null);
 		addGridField(leftPanel, "Tên sản phẩm:", sp.getTenSanPham(), 1, true, ColorScheme.PRIMARY);
-		addGridField(leftPanel, "Loại sản phẩm:", sp.getLoaiSanPham(), 2, false, null);
-		addGridField(leftPanel, "Đơn vị tính:", sp.getDonViTinh(), 3, false, null);
-		addGridField(leftPanel, "Giá bán đề xuất:", sp.getGiaBanDeXuat() != null ? df.format(sp.getGiaBanDeXuat()) : "0 VND", 4, true, new Color(25, 135, 84));
+		addGridField(leftPanel, "Đơn vị tính:", sp.getDonViTinh(), 2, false, null);
+		addGridField(leftPanel, "Giá bán đề xuất:", sp.getGiaBanDeXuat() != null ? df.format(sp.getGiaBanDeXuat()) : "0 VND", 3, true, new Color(25, 135, 84));
 		
 		gbc.gridx = 0; gbc.gridy = 0;
 		contentPanel.add(leftPanel, gbc);
@@ -85,33 +86,36 @@ public class ProductDetailDialog extends JDialog {
 		// ===== CỘT PHẢI (THÔNG TIN KHO & TRẠNG THÁI) =====
 		var rightPanel = createSectionPanel("Tồn kho & Trạng thái");
 
-		addGridField(rightPanel, "Mức tồn tối thiểu:", String.valueOf(sp.getMucTonToiThieu()), 0, false, null);
-		
+		// Load data tổng quan
+		dao.SanPhamDao spDao = new dao.SanPhamDao();
+		SanPham fullSp = spDao.getFullDetailByMaSP(sp.getMaSanPham());
+		if (fullSp == null) fullSp = sp;
+
 		// Tổng tồn - Highlight
-		String strTongTon = sp.getTongTon() + " " + sp.getDonViTinh();
-		Color cTon = sp.getTongTon() <= sp.getMucTonToiThieu() ? ColorScheme.DANGER : ColorScheme.PRIMARY;
-		addGridField(rightPanel, "Tổng lượng tồn:", strTongTon, 1, true, cTon);
+		String strTongTon = fullSp.getTongTon() + " " + fullSp.getDonViTinh();
+		Color cTon = ColorScheme.PRIMARY;
+		addGridField(rightPanel, "Tổng lượng tồn:", strTongTon, 0, true, cTon);
 		
 		// Hạn sử dụng - Highlight
-		String strHanSD = sp.getHanSuDungGanNhat() != null ? sp.getHanSuDungGanNhat().format(dfSD) : "Không xác định";
+		String strHanSD = fullSp.getHanSuDungGanNhat() != null ? fullSp.getHanSuDungGanNhat().format(dfSD) : "Không xác định";
 		Color cHan = ColorScheme.TEXT_PRIMARY;
-		if (sp.getHanSuDungGanNhat() != null) {
-			if (sp.getHanSuDungGanNhat().isBefore(java.time.LocalDate.now())) {
-				cHan = ColorScheme.DANGER; // Hết hạn
+		if (fullSp.getHanSuDungGanNhat() != null) {
+			if (fullSp.getHanSuDungGanNhat().isBefore(java.time.LocalDate.now())) {
+				cHan = ColorScheme.DANGER;
 				strHanSD += " (Đã quá hạn!)";
-			} else if (sp.getHanSuDungGanNhat().isBefore(java.time.LocalDate.now().plusDays(30))) {
-				cHan = ColorScheme.WARNING.darker(); // Sắp hết hạn
+			} else if (fullSp.getHanSuDungGanNhat().isBefore(java.time.LocalDate.now().plusDays(30))) {
+				cHan = ColorScheme.WARNING.darker();
 				strHanSD += " (Sắp hết hạn)";
 			} else {
-				cHan = ColorScheme.SUCCESS; // An toàn
+				cHan = ColorScheme.SUCCESS;
 			}
 		}
-		addGridField(rightPanel, "Hạn SD gần nhất:", strHanSD, 2, true, cHan);
+		addGridField(rightPanel, "Hạn SD gần nhất:", strHanSD, 1, true, cHan);
 
-		addGridField(rightPanel, "Ngày hệ thống tạo:", sp.getNgayTao() != null ? sp.getNgayTao().format(dtf) : "Không xác định", 3, false, null);
+		addGridField(rightPanel, "Ngày hệ thống tạo:", fullSp.getNgayTao() != null ? fullSp.getNgayTao().format(dtf) : "Không xác định", 2, false, null);
 		
-		String moTaText = (sp.getMoTa() != null && !sp.getMoTa().isEmpty()) ? sp.getMoTa() : "Không có";
-		addGridField(rightPanel, "Mô tả chi tiết:", moTaText, 4, false, null);
+		String moTaText = (fullSp.getMoTa() != null && !fullSp.getMoTa().isEmpty()) ? fullSp.getMoTa() : "Không có";
+		addGridField(rightPanel, "Mô tả chi tiết:", moTaText, 3, false, null);
 
 		gbc.gridx = 1; gbc.gridy = 0;
 		contentPanel.add(rightPanel, gbc);
@@ -128,36 +132,18 @@ public class ProductDetailDialog extends JDialog {
 		));
 		
 		String[] columnNames = {"Số lô", "Hạn sử dụng", "Số lượng tồn", "Sỉ/Lẻ", "Trạng thái"};
-		var tableModel = new DefaultTableModel(columnNames, 0) {
+		tableModel = new DefaultTableModel(columnNames, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false;
 			}
 		};
-		var table = new JTable(tableModel);
+		table = new JTable(tableModel);
 		table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		table.setRowHeight(25);
 		table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
 		
-		// Load Data từ DB & binding
-		List<LoHang> batches = batchDao.getActiveBatchesByMaSP(sp.getMaSanPham());
-		java.time.LocalDate now = java.time.LocalDate.now();
-		java.time.LocalDate next30Days = now.plusDays(30);
-		
-		for (LoHang lh : batches) {
-			String hanSD = lh.getHanSuDung() != null ? lh.getHanSuDung().format(dfSD) : "N/A";
-			String loai = lh.getLoaiHinhBan() != null ? lh.getLoaiHinhBan() : "Chưa xác định";
-			String trangThai = "An toàn";
-			
-			if (lh.getHanSuDung() != null) {
-				if (lh.getHanSuDung().isBefore(now)) trangThai = "Quá hạn";
-				else if (lh.getHanSuDung().isBefore(next30Days)) trangThai = "Sắp hết hạn";
-			}
-			
-			tableModel.addRow(new Object[] {
-				lh.getSoLo(), hanSD, lh.getSoLuongTon() + " " + sp.getDonViTinh(), loai, trangThai
-			});
-		}
+		loadBangLoHang(sp.getMaSanPham(), sp.getDonViTinh());
 		
 		// Highlight Row custom Renderer
 		DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
@@ -257,5 +243,29 @@ public class ProductDetailDialog extends JDialog {
 		g.gridx = 1; g.gridy = gridY;
 		g.weightx = 0.7;
 		panel.add(val, g);
+	}
+
+	private void loadBangLoHang(int maSP, String donVi) {
+		tableModel.setRowCount(0);
+		List<LoHang> batches = batchDao.getActiveBatchesByMaSP(maSP);
+		
+		java.time.LocalDate now = java.time.LocalDate.now();
+		java.time.LocalDate next30Days = now.plusDays(30);
+		java.time.format.DateTimeFormatter dfSD = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+		for (LoHang lh : batches) {
+			String hanSD = lh.getHanSuDung() != null ? lh.getHanSuDung().format(dfSD) : "N/A";
+			String loai = lh.getLoaiHinhBan() != null ? lh.getLoaiHinhBan() : "Chưa xác định";
+			String status = "An toàn";
+			
+			if (lh.getHanSuDung() != null) {
+				if (lh.getHanSuDung().isBefore(now)) status = "Quá hạn";
+				else if (lh.getHanSuDung().isBefore(next30Days)) status = "Sắp hết hạn";
+			}
+			
+			tableModel.addRow(new Object[] {
+				lh.getSoLo(), hanSD, lh.getSoLuongTon() + " " + donVi, loai, status
+			});
+		}
 	}
 }

@@ -177,7 +177,16 @@ public class PhieuNhapDao {
 					}
 				}
 
-				// 3. Cập nhật lại Tổng Tiền cho Phiếu Nhập
+				// 3. [Requirement: FORCE_RESURRECT_PRODUCT_SQL] Ép sản phẩm hiện lại (TrangThai = 1)
+				String sqlResurrect = "UPDATE SanPham SET TrangThai = 1, DaXoa = 0 WHERE MaSanPham = ?";
+				try (PreparedStatement psRes = con.prepareStatement(sqlResurrect)) {
+					for (ChiTietPhieuNhap ct : chiTietList) {
+						psRes.setInt(1, ct.getMaSanPham());
+						psRes.executeUpdate();
+					}
+				}
+
+				// 4. Cập nhật lại Tổng Tiền cho Phiếu Nhập
 				try (PreparedStatement psTongTien = con.prepareStatement("UPDATE dbo.PhieuNhap SET TongTien = ? WHERE MaPhieuNhap = ?")) {
 					psTongTien.setBigDecimal(1, tongTienHoaDon);
 					psTongTien.setInt(2, maPhieuNhapMoi);
