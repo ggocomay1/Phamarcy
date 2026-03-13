@@ -1,26 +1,21 @@
 package panels;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import common.ColorScheme;
 import entity.NguoiDung;
 
 /**
- * SidebarPanel - Thanh điều hướng bên trái với phân quyền động và Layout co giãn.
+ * SidebarPanel - Modern dark sidebar navigation
+ * Icons + smooth hover + blue active state
+ * 
+ * @version 4.0
  */
 public class SidebarPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -30,39 +25,60 @@ public class SidebarPanel extends JPanel {
 	private Map<String, JButton> menuItems = new HashMap<>();
 	private JPanel menuPanel;
 
+	// Menu icon mapping
+	private static final Map<String, String> MENU_ICONS = Map.of(
+		"dashboard", "📊",
+		"banhang", "🛒",
+		"nhaphang", "📥",
+		"sanpham", "💊",
+		"lohang", "📦",
+		"khachhang", "👥",
+		"nhacungcap", "🏭",
+		"baocao", "📈",
+		"nguoidung", "👤"
+	);
+
 	public SidebarPanel(NguoiDung currentUser, Consumer<String> onMenuSelection) {
 		this.onMenuSelection = onMenuSelection;
-		
 		initialize(currentUser);
 	}
 
 	private void initialize(NguoiDung currentUser) {
 		setBackground(ColorScheme.SIDEBAR_BG);
-		setPreferredSize(new Dimension(260, 0));
+		setPreferredSize(new Dimension(250, 0));
 		setLayout(new BorderLayout());
 
-		// Sidebar header (Logo area)
-		var sidebarHeader = new JPanel();
-		sidebarHeader.setOpaque(false);
-		sidebarHeader.setLayout(new java.awt.GridBagLayout());
-		sidebarHeader.setPreferredSize(new Dimension(260, 80));
-		sidebarHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(255, 255, 255, 30)));
+		// === Logo Header ===
+		var headerPanel = new JPanel(new BorderLayout());
+		headerPanel.setOpaque(false);
+		headerPanel.setPreferredSize(new Dimension(250, 80));
+		headerPanel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.SIDEBAR_DIVIDER),
+			new EmptyBorder(0, 24, 0, 24)
+		));
+
+		var logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		logoPanel.setOpaque(false);
+
+		var lblIcon = new JLabel("💊");
+		lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+		lblIcon.setBorder(new EmptyBorder(0, 0, 0, 10));
+		logoPanel.add(lblIcon);
 
 		var lblLogo = new JLabel("MEPHAR");
-		lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+		lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 22));
 		lblLogo.setForeground(Color.WHITE);
-		sidebarHeader.add(lblLogo);
+		logoPanel.add(lblLogo);
 
-		add(sidebarHeader, BorderLayout.NORTH);
+		headerPanel.add(logoPanel, BorderLayout.WEST);
+		add(headerPanel, BorderLayout.NORTH);
 
-		// Navigation menu
+		// === Navigation Menu ===
 		menuPanel = new JPanel();
 		menuPanel.setOpaque(false);
-		// Sử dụng BoxLayout để các nút xếp sát nhau không có khoảng trống (Requirement: ALIGNMENT)
-		menuPanel.setLayout(new javax.swing.BoxLayout(menuPanel, javax.swing.BoxLayout.Y_AXIS));
-		menuPanel.setBorder(new EmptyBorder(15, 10, 15, 10));
+		menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+		menuPanel.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-		// Menu items with Permission Check (Requirement: CLEAN_RBAC_ARCHITECTURE)
 		String role = currentUser.getVaiTro();
 		addMenuItemIfAllowed(menuPanel, "Tổng quan", "dashboard", role);
 		addMenuItemIfAllowed(menuPanel, "Bán hàng", "banhang", role);
@@ -78,7 +94,25 @@ public class SidebarPanel extends JPanel {
 		wrapperPanel.setOpaque(false);
 		wrapperPanel.add(menuPanel, BorderLayout.NORTH);
 
-		add(wrapperPanel, BorderLayout.CENTER);
+		// Scrollable if too many items
+		var scrollPane = new JScrollPane(wrapperPanel);
+		scrollPane.setBorder(null);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		add(scrollPane, BorderLayout.CENTER);
+
+		// === Footer: Version ===
+		var footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+		footerPanel.setOpaque(false);
+		footerPanel.setBorder(new EmptyBorder(8, 0, 12, 0));
+		var lblVersion = new JLabel("v4.0 · MEPHAR");
+		lblVersion.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		lblVersion.setForeground(ColorScheme.withAlpha(Color.WHITE, 60));
+		footerPanel.add(lblVersion);
+		add(footerPanel, BorderLayout.SOUTH);
 	}
 
 	private void addMenuItemIfAllowed(JPanel parent, String text, String action, String role) {
@@ -88,23 +122,20 @@ public class SidebarPanel extends JPanel {
 	}
 
 	private void addMenuItem(JPanel parent, String text, String action) {
-		var btn = new JButton(text);
+		String icon = MENU_ICONS.getOrDefault(action, "•");
+		var btn = new JButton("  " + icon + "   " + text);
 		btn.setHorizontalAlignment(SwingConstants.LEFT);
-		btn.setIconTextGap(15);
-		btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+		btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		btn.setForeground(ColorScheme.SIDEBAR_TEXT);
 		btn.setBackground(ColorScheme.SIDEBAR_BG);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-		
-		// Đảm bảo nút chiếm hết chiều ngang trong BoxLayout
-		btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-		btn.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+		btn.setAlignmentX(Component.LEFT_ALIGNMENT);
 		btn.putClientProperty("JButton.buttonType", "roundRect");
-		btn.putClientProperty("Component.arc", 16);
-		btn.setBorder(new EmptyBorder(10, 15, 10, 15));
+		btn.putClientProperty("Component.arc", 10);
+		btn.setBorder(new EmptyBorder(10, 14, 10, 14));
 
 		btn.addActionListener(e -> {
 			updateActiveState(action);
@@ -113,14 +144,13 @@ public class SidebarPanel extends JPanel {
 			}
 		});
 
-		// Hover effect (Requirement: DISABLED_VISUALS)
+		// Hover effect
 		btn.addMouseListener(new java.awt.event.MouseAdapter() {
 			@Override
 			public void mouseEntered(java.awt.event.MouseEvent e) {
 				if (btn.isEnabled() && !action.equals(currentAction)) {
 					btn.setBackground(ColorScheme.SIDEBAR_HOVER);
-				} else if (!btn.isEnabled()) {
-					btn.setCursor(new Cursor(Cursor.WAIT_CURSOR)); // (Requirement: CURSOR_FEEDBACK)
+					btn.setForeground(Color.WHITE);
 				}
 			}
 
@@ -128,42 +158,41 @@ public class SidebarPanel extends JPanel {
 			public void mouseExited(java.awt.event.MouseEvent e) {
 				if (btn.isEnabled() && !action.equals(currentAction)) {
 					btn.setBackground(ColorScheme.SIDEBAR_BG);
+					btn.setForeground(ColorScheme.SIDEBAR_TEXT);
 				}
 			}
 		});
 
-		// Listen for property changes to update visuals when disabled
 		btn.addPropertyChangeListener("enabled", evt -> {
-			if (!(boolean)evt.getNewValue()) {
-				btn.setForeground(Color.GRAY);
-			} else {
+			if (!(boolean) evt.getNewValue()) {
+				btn.setForeground(new Color(75, 85, 99));
+			} else if (!action.equals(currentAction)) {
 				btn.setForeground(ColorScheme.SIDEBAR_TEXT);
 			}
 		});
 
-		// Thêm khoảng cách nhỏ giữa các nút
-		parent.add(javax.swing.Box.createRigidArea(new Dimension(0, 5)));
+		parent.add(Box.createRigidArea(new Dimension(0, 3)));
 		parent.add(btn);
 		menuItems.put(action, btn);
 	}
 
 	public void updateActiveState(String action) {
-		// Reset active state of previous item
+		// Reset previous
 		if (currentAction != null && menuItems.containsKey(currentAction)) {
 			var oldBtn = menuItems.get(currentAction);
 			oldBtn.setBackground(ColorScheme.SIDEBAR_BG);
-			oldBtn.setForeground(oldBtn.isEnabled() ? ColorScheme.SIDEBAR_TEXT : Color.GRAY);
-			oldBtn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+			oldBtn.setForeground(oldBtn.isEnabled() ? ColorScheme.SIDEBAR_TEXT : new Color(75, 85, 99));
+			oldBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		}
 
-		// Set new active state (Requirement: PREVENT_DISABLED_ACTIVE)
+		// Set new active
 		currentAction = action;
 		if (menuItems.containsKey(action)) {
 			var newBtn = menuItems.get(action);
 			if (newBtn.isEnabled()) {
 				newBtn.setBackground(ColorScheme.SIDEBAR_ACTIVE);
-				newBtn.setForeground(ColorScheme.SIDEBAR_TEXT_ACTIVE);
-				newBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+				newBtn.setForeground(Color.WHITE);
+				newBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
 			}
 		}
 	}

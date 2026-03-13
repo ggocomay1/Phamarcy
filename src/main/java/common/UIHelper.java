@@ -1,136 +1,227 @@
 package common;
 
-import java.awt.Color;
-import java.awt.Font;
-
-import javax.swing.JButton;
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 /**
- * UIHelper - Helper methods cho UI components
+ * UIHelper - Design System Helper cho MEPHAR
+ * Cung cấp factory methods để tạo UI components đồng bộ
  * 
- * @author Generated
- * @version 1.0
+ * @version 4.0
  */
 public class UIHelper {
 
-	/**
-	 * Tạo button với style thống nhất và hover effect (pastel)
-	 */
+	// ========== FONTS ==========
+	public static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 24);
+	public static final Font FONT_SECTION = new Font("Segoe UI", Font.BOLD, 18);
+	public static final Font FONT_SUBSECTION = new Font("Segoe UI", Font.BOLD, 15);
+	public static final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 14);
+	public static final Font FONT_LABEL = new Font("Segoe UI", Font.PLAIN, 13);
+	public static final Font FONT_LABEL_BOLD = new Font("Segoe UI", Font.BOLD, 13);
+	public static final Font FONT_SMALL = new Font("Segoe UI", Font.PLAIN, 12);
+	public static final Font FONT_BUTTON = new Font("Segoe UI", Font.BOLD, 14);
+	public static final Font FONT_BUTTON_SM = new Font("Segoe UI", Font.BOLD, 12);
+	public static final Font FONT_INPUT = new Font("Segoe UI", Font.PLAIN, 14);
+	public static final Font FONT_TABLE = new Font("Segoe UI", Font.PLAIN, 13);
+	public static final Font FONT_TABLE_HEADER = new Font("Segoe UI", Font.BOLD, 13);
+
+	// ========== BUTTON FACTORY ==========
+
 	public static JButton createStyledButton(String text, Color bgColor) {
 		var btn = new JButton(text);
-		btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+		btn.setFont(FONT_BUTTON);
 		btn.setBackground(bgColor);
-		
-		// Text color - nếu màu nền quá sáng thì dùng text đậm
-		if (isLightColor(bgColor)) {
-			btn.setForeground(ColorScheme.TEXT_PRIMARY);
-		} else {
-			btn.setForeground(ColorScheme.TEXT_WHITE);
-		}
-		
+		btn.setForeground(isLightColor(bgColor) ? ColorScheme.TEXT_PRIMARY : ColorScheme.TEXT_WHITE);
 		btn.setFocusPainted(false);
 		btn.setBorderPainted(false);
-		
-		// Hover effect
-		Color hoverColor = ColorScheme.getHoverColor(bgColor);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.putClientProperty("JButton.buttonType", "roundRect");
+
+		Color hoverColor = getHoverColor(bgColor);
 		btn.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e) {
-				btn.setBackground(hoverColor);
+			@Override public void mouseEntered(java.awt.event.MouseEvent e) {
+				if (btn.isEnabled()) btn.setBackground(hoverColor);
 			}
-			@Override
-			public void mouseExited(java.awt.event.MouseEvent e) {
-				btn.setBackground(bgColor);
+			@Override public void mouseExited(java.awt.event.MouseEvent e) {
+				if (btn.isEnabled()) btn.setBackground(bgColor);
 			}
 		});
-		
+
 		return btn;
 	}
-	
-	/**
-	 * Kiểm tra màu có phải màu sáng không
-	 */
-	private static boolean isLightColor(Color color) {
-		// Tính độ sáng (luminance)
-		double luminance = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
-		return luminance > 200; // Nếu luminance > 200 thì là màu sáng
-	}
 
-	/**
-	 * Tạo button primary (xanh dương)
-	 */
 	public static JButton createPrimaryButton(String text) {
 		return createStyledButton(text, ColorScheme.PRIMARY);
 	}
 
-	/**
-	 * Tạo button success (xanh lá)
-	 */
 	public static JButton createSuccessButton(String text) {
 		return createStyledButton(text, ColorScheme.SUCCESS);
 	}
 
-	/**
-	 * Tạo button danger (đỏ)
-	 */
 	public static JButton createDangerButton(String text) {
 		return createStyledButton(text, ColorScheme.DANGER);
 	}
 
-	/**
-	 * Tạo button warning (vàng cam)
-	 */
 	public static JButton createWarningButton(String text) {
 		return createStyledButton(text, ColorScheme.WARNING);
 	}
 
-	/**
-	 * Tạo button neutral (xám)
-	 */
 	public static JButton createNeutralButton(String text) {
 		return createStyledButton(text, ColorScheme.NEUTRAL);
 	}
-	
-	/**
-	 * Tạo text field với style thống nhất (pastel)
-	 */
-	public static javax.swing.JTextField createStyledTextField() {
-		var txt = new javax.swing.JTextField();
-		txt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-		txt.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-			javax.swing.BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
-			new javax.swing.border.EmptyBorder(10, 12, 10, 12)
+
+	/** Outline button - nền trong, border màu */
+	public static JButton createOutlineButton(String text, Color color) {
+		var btn = new JButton(text);
+		btn.setFont(FONT_BUTTON_SM);
+		btn.setBackground(ColorScheme.PANEL_BG);
+		btn.setForeground(color);
+		btn.setFocusPainted(false);
+		btn.setBorderPainted(true);
+		btn.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(color, 1),
+			new EmptyBorder(6, 16, 6, 16)
 		));
-		txt.setBackground(ColorScheme.INPUT_FOCUS);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.putClientProperty("JButton.buttonType", "roundRect");
+
+		btn.addMouseListener(new java.awt.event.MouseAdapter() {
+			@Override public void mouseEntered(java.awt.event.MouseEvent e) {
+				if (btn.isEnabled()) {
+					btn.setBackground(ColorScheme.withAlpha(color, 15));
+					btn.setForeground(color.darker());
+				}
+			}
+			@Override public void mouseExited(java.awt.event.MouseEvent e) {
+				if (btn.isEnabled()) {
+					btn.setBackground(ColorScheme.PANEL_BG);
+					btn.setForeground(color);
+				}
+			}
+		});
+
+		return btn;
+	}
+
+	// ========== INPUT FACTORY ==========
+
+	public static JTextField createStyledTextField() {
+		var txt = new JTextField();
+		txt.setFont(FONT_INPUT);
+		txt.setPreferredSize(new Dimension(0, ColorScheme.INPUT_HEIGHT));
+		txt.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
+			new EmptyBorder(8, 12, 8, 12)
+		));
+		txt.setBackground(ColorScheme.INPUT_BG);
 		return txt;
 	}
-	
-	/**
-	 * Tạo text field disabled với style thống nhất
-	 */
-	public static javax.swing.JTextField createStyledTextFieldDisabled() {
+
+	public static JTextField createStyledTextFieldDisabled() {
 		var txt = createStyledTextField();
 		txt.setEditable(false);
 		txt.setBackground(ColorScheme.INPUT_DISABLED);
 		return txt;
 	}
 
-	/**
-	 * Tạo Info Banner (Thông báo nổi bật dạng block)
-	 */
-	public static javax.swing.JPanel createInfoBanner(String htmlMessage) {
-		javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.BorderLayout());
-		panel.setBackground(new Color(225, 245, 254)); // Light Blue 50
-		panel.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-			javax.swing.BorderFactory.createLineBorder(new Color(129, 212, 250), 1),
-			javax.swing.BorderFactory.createEmptyBorder(12, 16, 12, 16)
+	// ========== CARD / SECTION FACTORY ==========
+
+	/** Tạo card panel trắng với shadow nhẹ */
+	public static JPanel createCard() {
+		var card = new JPanel();
+		card.setBackground(ColorScheme.PANEL_BG);
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
+			new EmptyBorder(ColorScheme.SPACING_LG, ColorScheme.SPACING_LG,
+				ColorScheme.SPACING_LG, ColorScheme.SPACING_LG)
+		));
+		return card;
+	}
+
+	/** Tạo section label */
+	public static JLabel createSectionLabel(String text) {
+		var lbl = new JLabel(text);
+		lbl.setFont(FONT_SUBSECTION);
+		lbl.setForeground(ColorScheme.TEXT_PRIMARY);
+		return lbl;
+	}
+
+	/** Tạo field label */
+	public static JLabel createFieldLabel(String text) {
+		var lbl = new JLabel(text);
+		lbl.setFont(FONT_LABEL);
+		lbl.setForeground(ColorScheme.TEXT_PRIMARY);
+		return lbl;
+	}
+
+	/** Tạo text phụ */
+	public static JLabel createMutedLabel(String text) {
+		var lbl = new JLabel(text);
+		lbl.setFont(FONT_SMALL);
+		lbl.setForeground(ColorScheme.TEXT_MUTED);
+		return lbl;
+	}
+
+	// ========== INFO BANNER ==========
+
+	public static JPanel createInfoBanner(String htmlMessage) {
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.setBackground(ColorScheme.INFO_LIGHT);
+		panel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new Color(147, 197, 253), 1),
+			BorderFactory.createEmptyBorder(10, 14, 10, 14)
 		));
 
-		javax.swing.JLabel lblMessage = new javax.swing.JLabel(htmlMessage);
-		lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-		lblMessage.setForeground(new Color(1, 87, 155)); // Light Blue 900
-		
-		panel.add(lblMessage, java.awt.BorderLayout.CENTER);
+		JLabel lblMessage = new JLabel(htmlMessage);
+		lblMessage.setFont(FONT_LABEL);
+		lblMessage.setForeground(new Color(30, 64, 175));
+
+		panel.add(lblMessage, BorderLayout.CENTER);
 		return panel;
+	}
+
+	// ========== EMPTY STATE ==========
+
+	public static JPanel createEmptyState(String icon, String title, String subtitle) {
+		var panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setOpaque(false);
+		panel.setBorder(new EmptyBorder(40, 20, 40, 20));
+
+		var lblIcon = new JLabel(icon);
+		lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 48));
+		lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+		panel.add(lblIcon);
+
+		panel.add(Box.createVerticalStrut(12));
+
+		var lblTitle = new JLabel(title);
+		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+		lblTitle.setForeground(ColorScheme.TEXT_SECONDARY);
+		lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+		panel.add(lblTitle);
+
+		if (subtitle != null) {
+			panel.add(Box.createVerticalStrut(6));
+			var lblSub = new JLabel(subtitle);
+			lblSub.setFont(FONT_SMALL);
+			lblSub.setForeground(ColorScheme.TEXT_MUTED);
+			lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
+			panel.add(lblSub);
+		}
+
+		return panel;
+	}
+
+	// ========== UTILS ==========
+
+	private static boolean isLightColor(Color color) {
+		double luminance = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
+		return luminance > 200;
+	}
+
+	private static Color getHoverColor(Color color) {
+		return color.darker();
 	}
 }
