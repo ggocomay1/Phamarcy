@@ -21,7 +21,7 @@ import common.ColorScheme;
 import dao.ThongKeDao.*;
 import entity.NguoiDung;
 import service.DashboardService;
-import ui.StatusBadgeRenderer;
+import components.StatusBadgeRenderer;
 
 /**
  * DashboardPanel – Tổng quan nhà thuốc.
@@ -30,8 +30,8 @@ import ui.StatusBadgeRenderer;
  *   A. Header      – Tiêu đề, ngày, user, nút làm mới
  *   B. KPI row     – 6 thẻ số liệu chính
  *   C. Alerts row  – Tồn kho thấp (trái) | Lô sắp hết hạn (phải)
- *   D. Recent      – Hóa đơn gần đây
- *   E. Stats row   – Top bán chạy (trái) | Trạng thái tồn kho (phải)
+ *   D. Stats row   – Top bán chạy (trái) | Trạng thái tồn kho (phải)
+ *   E. Recent      – Hóa đơn gần đây
  *
  * Kiến trúc:  Panel → DashboardService → ThongKeDao
  *
@@ -141,9 +141,9 @@ public class DashboardPanel extends JPanel {
         content.add(vGap(GAP));
         content.add(createAlertRow());
         content.add(vGap(GAP));
-        content.add(createRecentInvoicePanel());
-        content.add(vGap(GAP));
         content.add(createBottomSummaryPanel());
+        content.add(vGap(GAP));
+        content.add(createRecentInvoicePanel());
 
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
@@ -190,7 +190,7 @@ public class DashboardPanel extends JPanel {
             right.add(chipLabel(currentUser.getHoTen()));
         }
 
-        JButton btn = pillButton("↻  Làm mới", ACCENT_BLUE);
+        JButton btn = pillButton("Làm mới", ACCENT_BLUE);
         btn.addActionListener(e -> loadAllData());
         right.add(btn);
 
@@ -582,29 +582,12 @@ public class DashboardPanel extends JPanel {
         lblStatus.setForeground(TEXT_MUTED);
 
         new SwingWorker<Void, Void>() {
-            ThongKeNgay stats;
-            BigDecimal revYesterday;
-            int totalProducts, lowStockCount, expiringCount, customerCount;
-            List<CanhBaoTonKho> lowStockList;
-            List<CanhBaoHetHan> expiringList;
-            List<HoaDonGanDay> recentList;
-            List<SanPhamBanChay> topSelling;
-            Map<String, Integer> invStatus;
+            service.dto.DashboardSummaryDTO dto;
             String error;
 
             @Override protected Void doInBackground() {
                 try {
-                    stats         = svc.getThongKeHomNay();
-                    revYesterday  = svc.getDoanhThuHomQua();
-                    totalProducts = svc.getTongSanPham();
-                    lowStockCount = svc.getSoSanPhamSapHet();
-                    expiringCount = svc.getSoLoSapHetHan();
-                    customerCount = svc.getTongKhachHang();
-                    lowStockList  = svc.getDanhSachTonKhoThap();
-                    expiringList  = svc.getDanhSachLoSapHetHan();
-                    recentList    = svc.getHoaDonGanDay();
-                    topSelling    = svc.getTopSanPhamBanChayHomNay();
-                    invStatus     = svc.getTyLeTonKho();
+                    dto = svc.getDashboardSummary();
                 } catch (Exception e) {
                     e.printStackTrace();
                     error = e.getMessage();
@@ -613,25 +596,49 @@ public class DashboardPanel extends JPanel {
             }
 
             @Override protected void done() {
-                if (error != null) {
-                    lblStatus.setText("⚠ Không thể tải dữ liệu");
+                if (error != null || dto == null) {
+                    lblStatus.setText("Lỗi tải dữ liệu");
                     lblStatus.setForeground(ACCENT_RED);
                     return;
                 }
                 try {
-                    loadSummaryCards(stats, revYesterday, totalProducts,
-                            lowStockCount, expiringCount, customerCount);
-                    loadLowStockData(lowStockList);
-                    loadExpiringBatches(expiringList);
-                    loadRecentInvoices(recentList);
-                    loadTopSellingProducts(topSelling);
-                    loadInventoryStatus(invStatus);
+                    // KPI cards
+                    valRevenue.setText(VND.format(dto.doanhThuHomNay));
+                    valInvoice.setText(String.valueOf(dto.hoaDonHomNay));
+                    valLowStock.setText(String.valueOf(dto.soSanPhamSapHet));
+                    valExpiring.setText(String.valueOf(dto.soLoSapHetHan));
+                    valProduct.setText(String.valueOf(dto.tongSanPham));
+                    valCustomer.setText(String.valueOf(dto.tongKhachHang));
 
-                    lblStatus.setText("✓ " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                    // Trend
+                    if (dto.doanhThuHomQua != null && dto.doanhThuHomQua.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal diff = dto.doanhThuHomNay.subtract(dto.doanhThuHomQua);
+                        double pct = diff.doubleValue() / dto.doanhThuHomQua.doubleValue() * 100;
+                        if (diff.signum() >= 0) {
+                            lblTrend.setText(String.format("▲ +%.0f%% vs hôm qua", pct));
+                            lblTrend.setForeground(ACCENT_GREEN);
+                        } else {
+                            lblTrend.setText(String.format("▼ %.0f%% vs hôm qua", pct));
+                            lblTrend.setForeground(ACCENT_RED);
+                        }
+                    } else {
+                        lblTrend.setText("Chưa có dữ liệu hôm qua");
+                        lblTrend.setForeground(TEXT_MUTED);
+                    }
+
+                    // Alert tables – delegate to existing binding methods with DAO types
+                    // (backward compat: these methods still accept DAO inner types)
+                    loadLowStockData(svc.getDanhSachTonKhoThap());
+                    loadExpiringBatches(svc.getDanhSachLoSapHetHan());
+                    loadRecentInvoices(svc.getHoaDonGanDay());
+                    loadTopSellingProducts(svc.getTopSanPhamBanChayHomNay());
+                    loadInventoryStatus(dto.inventoryStatus);
+
+                    lblStatus.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
                     lblStatus.setForeground(ACCENT_GREEN);
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    lblStatus.setText("⚠ Lỗi hiển thị");
+                    lblStatus.setText("Lỗi hiển thị");
                     lblStatus.setForeground(ACCENT_RED);
                 }
             }
@@ -641,33 +648,6 @@ public class DashboardPanel extends JPanel {
     /* ================================================================
        DATA → UI  BINDING
        ================================================================ */
-
-    /* --- B. KPI --- */
-    private void loadSummaryCards(ThongKeNgay s, BigDecimal revYesterday,
-                                  int totalProd, int lowStock, int expiring, int cust) {
-        valRevenue.setText(VND.format(s.doanhThu));
-        valInvoice.setText(String.valueOf(s.soHoaDon));
-        valLowStock.setText(String.valueOf(lowStock));
-        valExpiring.setText(String.valueOf(expiring));
-        valProduct.setText(String.valueOf(totalProd));
-        valCustomer.setText(String.valueOf(cust));
-
-        // Trend
-        if (revYesterday != null && revYesterday.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal diff = s.doanhThu.subtract(revYesterday);
-            double pct = diff.doubleValue() / revYesterday.doubleValue() * 100;
-            if (diff.signum() >= 0) {
-                lblTrend.setText(String.format("▲ +%.0f%% vs hôm qua", pct));
-                lblTrend.setForeground(ACCENT_GREEN);
-            } else {
-                lblTrend.setText(String.format("▼ %.0f%% vs hôm qua", pct));
-                lblTrend.setForeground(ACCENT_RED);
-            }
-        } else {
-            lblTrend.setText("Chưa có dữ liệu hôm qua");
-            lblTrend.setForeground(TEXT_MUTED);
-        }
-    }
 
     /* --- C1. Low stock --- */
     private void loadLowStockData(List<CanhBaoTonKho> data) {

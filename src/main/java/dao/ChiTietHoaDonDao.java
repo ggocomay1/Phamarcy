@@ -59,16 +59,19 @@ public class ChiTietHoaDonDao {
 	}
 
 	/**
-	 * Lấy chi tiết hóa đơn với thông tin sản phẩm và lô hàng (cho hiển thị)
-	 * Trả về: MaCTHD, MaSanPham, TenSanPham, SoLo, SoLuong, GiaBan, ThanhTien
+	 * Lấy chi tiết hóa đơn với thông tin sản phẩm và lô hàng (cho hiển thị v6)
+	 * Trả về: MaCTHD, MaLoHang, MaSanPham, TenSanPham, DonViTinh, SoLo,
+	 *         HanSuDung, SoLuong, GiaBan, ThanhTien, SoLuongTonLo
 	 */
 	public List<Object[]> getDetailForDisplay(int maHoaDon) {
 		List<Object[]> list = new ArrayList<>();
 		try (
 			var con = ConnectDB.getCon();
 			var ps = con.prepareStatement(
-				"SELECT cthd.MaCTHD, cthd.MaSanPham, sp.TenSanPham, lh.SoLo, " +
-				"cthd.SoLuong, cthd.GiaBan, cthd.ThanhTien " +
+				"SELECT cthd.MaCTHD, cthd.MaLoHang, cthd.MaSanPham, " +
+				"sp.TenSanPham, sp.DonViTinh, lh.SoLo, " +
+				"CONVERT(varchar, lh.HanSuDung, 103) AS HSD, " +
+				"cthd.SoLuong, cthd.GiaBan, cthd.ThanhTien, lh.SoLuongTon " +
 				"FROM ChiTietHoaDon cthd " +
 				"JOIN SanPham sp ON sp.MaSanPham = cthd.MaSanPham " +
 				"JOIN LoHang lh ON lh.MaLoHang = cthd.MaLoHang " +
@@ -78,15 +81,21 @@ public class ChiTietHoaDonDao {
 		) {
 			ps.setInt(1, maHoaDon);
 			var rs = ps.executeQuery();
+			int stt = 1;
 			while (rs.next()) {
 				list.add(new Object[]{
 					rs.getInt("MaCTHD"),
+					rs.getInt("MaLoHang"),
+					stt++,
 					rs.getInt("MaSanPham"),
 					rs.getString("TenSanPham"),
+					rs.getString("DonViTinh"),
 					rs.getString("SoLo"),
+					rs.getString("HSD"),
 					rs.getInt("SoLuong"),
 					rs.getBigDecimal("GiaBan"),
-					rs.getBigDecimal("ThanhTien")
+					rs.getBigDecimal("ThanhTien"),
+					rs.getInt("SoLuongTon")
 				});
 			}
 		} catch (Exception e) {

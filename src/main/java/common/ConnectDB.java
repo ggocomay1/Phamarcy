@@ -2,131 +2,117 @@ package common;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
- * Class quản lý kết nối database với HikariCP Connection Pooling Đã cập nhật
- * đầy đủ các hàm để tương thích với ConnectDBTest * @author Vương Ngọc Gia Bảo
+ * ConnectDB – HikariCP connection pool, đọc cấu hình từ application.properties.
+ * Không còn hard-code server/user/password.
  *
- * @version 2.1
+ * @version 3.0
  */
 public class ConnectDB {
-	// Thông tin kết nối - Ưu tiên localhost, fallback sang server name cụ thể
-	// *** THAY ĐỔI SERVER_NAME và thông tin đăng nhập cho phù hợp với máy của bạn
-	// ***
-	private static final String[] SERVER_NAMES = {
-			"localhost", // Thử localhost trước (default instance)
-			"localhost\\MSSQLSERVER02", // Named instance phổ biến
-			"GIABAO123\\MSSQLSERVER02" // Server gốc của developer
-	};
-	private static final String PORT = "1433";
-	private static final String DATABASE_NAME = "CuaHangThuoc_Batch";
-	private static final String USER = "sa";
-	private static final String PASSWORD = "123456";
-	private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Batch;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;sendStringParametersAsUnicode=true;useUnicode=true;";
 
-	// HikariCP DataSource (Connection Pool)
-	private static HikariDataSource dataSource;
+    private static final Logger LOG = AppLogger.get(ConnectDB.class);
+    private static HikariDataSource dataSource;
 
-	// Khởi tạo connection pool ngay khi class được load
-	static {
-		initializeConnectionPool();
-	}
+    static {
+        initializeConnectionPool();
+    }
 
-	/**
-	 * Khởi tạo HikariCP Connection Pool - thử nhiều server name
-	 */
-	private static void initializeConnectionPool() {
-		for (String serverName : SERVER_NAMES) {
-			try {
-				var config = new HikariConfig();
+    /**
+     * Khởi tạo HikariCP Connection Pool – thử từng serverName trong config.
+     */
+    private static void initializeConnectionPool() {
+        String[] serverNames = AppConfig.dbServerNames();
+        String dbUser = AppConfig.dbUser();
+        String dbPassword = AppConfig.dbPassword();
+        int port = AppConfig.getInt("db.port", 1433);
+        String dbName = AppConfig.get("db.name", "CuaHangThuoc_Batch");
 
-				// Format JDBC URL chuẩn cho SQL Server
-				var jdbcUrl = String.format(
-						"jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;sendStringParametersAsUnicode=true;useUnicode=true;",
-						serverName, PORT, DATABASE_NAME);
+        // Nếu có db.url đầy đủ, thử dùng trực tiếp
+        String directUrl = AppConfig.dbUrl();
+        if (directUrl != null && !directUrl.isBlank()) {
+            if (tryConnect(directUrl, dbUser, dbPassword)) return;
+        }
 
-				config.setJdbcUrl(jdbcUrl);
-				config.setUsername(USER);
-				config.setPassword(PASSWORD);
+        // Fallback: thử từng serverName
+        for (String serverName : serverNames) {
+            String sn = serverName.trim();
+            if (sn.isEmpty()) continue;
+            String jdbcUrl = String.format(
+                "jdbc:sqlserver://%s:%d;databaseName=%s;encrypt=false;trustServerCertificate=true;" +
+                "characterEncoding=UTF-8;sendStringParametersAsUnicode=true;useUnicode=true;",
+                sn, port, dbName
+            );
+            if (tryConnect(jdbcUrl, dbUser, dbPassword)) return;
+        }
 
-				// Cấu hình tối ưu hiệu suất
-				config.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-				config.setMinimumIdle(2);
-				config.setMaximumPoolSize(10);
-				config.setConnectionTimeout(5000); // 5 giây timeout cho mỗi lần thử
+        LOG.severe("KHÔNG THỂ KẾT NỐI TỚI BẤT KỲ SQL SERVER NÀO!");
+        LOG.severe("Kiểm tra application.properties: db.url, db.serverNames, db.user, db.password");
+    }
 
-				// Các thuộc tính bổ sung để tăng tốc độ query
-				config.addDataSourceProperty("cachePrepStmts", "true");
-				config.addDataSourceProperty("prepStmtCacheSize", "250");
-				config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+    private static boolean tryConnect(String jdbcUrl, String user, String password) {
+        try {
+            var config = new HikariConfig();
+            config.setJdbcUrl(jdbcUrl);
+            config.setUsername(user);
+            config.setPassword(password);
+            config.setDriverClassName(AppConfig.dbDriver());
+            config.setMinimumIdle(AppConfig.poolMinIdle());
+            config.setMaximumPoolSize(AppConfig.poolMaxSize());
+            config.setConnectionTimeout(AppConfig.poolConnTimeout());
+            config.addDataSourceProperty("cachePrepStmts", "true");
+            config.addDataSourceProperty("prepStmtCacheSize", "250");
+            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-				dataSource = new HikariDataSource(config);
+            var ds = new HikariDataSource(config);
+            // Test connection
+            try (var testCon = ds.getConnection()) {
+                LOG.info("✓ Kết nối DB thành công: " + jdbcUrl.substring(0, Math.min(60, jdbcUrl.length())) + "...");
+                if (dataSource != null && !dataSource.isClosed()) dataSource.close();
+                dataSource = ds;
+                return true;
+            }
+        } catch (Exception e) {
+            LOG.warning("✗ Không thể kết nối: " + jdbcUrl.substring(0, Math.min(50, jdbcUrl.length())) + " - " + e.getMessage());
+            return false;
+        }
+    }
 
-				// Test connection
-				try (var testCon = dataSource.getConnection()) {
-					System.out.println("✓ Kết nối thành công tới: " + serverName + ":" + PORT + "/" + DATABASE_NAME);
-					return; // Thành công, thoát vòng lặp
-				}
+    /** Lấy connection từ pool */
+    public static Connection getCon() {
+        try {
+            if (dataSource == null || dataSource.isClosed()) return null;
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, "Lỗi lấy connection từ pool", e);
+            return null;
+        }
+    }
 
-			} catch (Exception e) {
-				System.err.println("✗ Không thể kết nối tới: " + serverName + " - " + e.getMessage());
-				if (dataSource != null && !dataSource.isClosed()) {
-					dataSource.close();
-					dataSource = null;
-				}
-			}
-		}
-		System.err.println("✗ KHÔNG THỂ KẾT NỐI TỚI BẤT KỲ SQL SERVER NÀO!");
-		System.err.println("  → Kiểm tra SQL Server đã chạy chưa");
-		System.err.println("  → Kiểm tra database '" + DATABASE_NAME + "' đã tồn tại chưa");
-		System.err.println("  → Kiểm tra user/password: " + USER + "/" + PASSWORD);
-	}
+    /** Kiểm tra pool active */
+    public static boolean isConnectionPoolActive() {
+        return dataSource != null && !dataSource.isClosed();
+    }
 
-	/**
-	 * Lấy connection từ pool (Dùng cho ConnectDBTest - Test 2, 3, 4)
-	 */
-	public static Connection getCon() {
-		try {
-			if (dataSource == null || dataSource.isClosed()) {
-				return null;
-			}
-			return dataSource.getConnection();
-		} catch (SQLException e) {
-			return null;
-		}
-	}
+    /** Thông tin pool */
+    public static String getPoolInfo() {
+        if (dataSource == null || dataSource.isClosed()) return "Pool chưa khởi tạo";
+        return String.format("Pool [Active: %d, Idle: %d, Total: %d]",
+            dataSource.getHikariPoolMXBean().getActiveConnections(),
+            dataSource.getHikariPoolMXBean().getIdleConnections(),
+            dataSource.getHikariPoolMXBean().getTotalConnections());
+    }
 
-	/**
-	 * Kiểm tra trạng thái pool (Dùng cho ConnectDBTest - Test 1)
-	 */
-	public static boolean isConnectionPoolActive() {
-		return dataSource != null && !dataSource.isClosed();
-	}
-
-	/**
-	 * Lấy thông tin chi tiết của pool (Dùng cho ConnectDBTest - Test 5)
-	 */
-	public static String getPoolInfo() {
-		if (dataSource == null || dataSource.isClosed()) {
-			return "Connection Pool chưa được khởi tạo";
-		}
-
-		// Trả về thông tin trạng thái các kết nối trong Pool
-		return String.format("Pool Status [Active: %d, Idle: %d, Total: %d]",
-				dataSource.getHikariPoolMXBean().getActiveConnections(),
-				dataSource.getHikariPoolMXBean().getIdleConnections(),
-				dataSource.getHikariPoolMXBean().getTotalConnections());
-	}
-
-	/**
-	 * Đóng pool khi shutdown ứng dụng
-	 */
-	public static void closeConnectionPool() {
-		if (dataSource != null && !dataSource.isClosed()) {
-			dataSource.close();
-		}
-	}
+    /** Đóng pool */
+    public static void closeConnectionPool() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            LOG.info("Connection pool closed");
+        }
+    }
 }

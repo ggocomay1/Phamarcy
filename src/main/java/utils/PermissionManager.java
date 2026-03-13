@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import model.Role;
+import common.Role;
 
 /**
  * PermissionManager - Quản lý phân quyền tập trung (RBAC Architecture)
@@ -23,7 +23,7 @@ public class PermissionManager {
         permissions.put("lohang", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("khachhang", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("nhacungcap", Arrays.asList(Role.ADMIN, Role.QUANLY));
-        permissions.put("baocao", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
+        permissions.put("lichsuhoadon", Arrays.asList(Role.ADMIN, Role.QUANLY, Role.NHANVIEN));
         permissions.put("nguoidung", Arrays.asList(Role.ADMIN));
     }
 

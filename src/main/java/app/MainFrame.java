@@ -16,7 +16,7 @@ import javax.swing.WindowConstants;
 import common.ColorScheme;
 import common.ConnectDB;
 import entity.NguoiDung;
-import panels.BaoCaoPanel;
+import panels.HoaDonHistoryPanel;
 import panels.BanHangPanel;
 import panels.DashboardPanel;
 import panels.KhachHangPanel;
@@ -146,7 +146,7 @@ public class MainFrame extends JFrame {
 		mainContentPanel.add(loHangPanel, "lohang");
 		mainContentPanel.add(new KhachHangPanel(currentUser), "khachhang");
 		mainContentPanel.add(new NhaCungCapPanel(currentUser), "nhacungcap");
-		mainContentPanel.add(new BaoCaoPanel(currentUser), "baocao");
+		mainContentPanel.add(new HoaDonHistoryPanel(currentUser), "lichsuhoadon");
 		mainContentPanel.add(new NguoiDungPanel(currentUser), "nguoidung");
 
 		container.add(mainContentPanel, BorderLayout.CENTER);
@@ -166,33 +166,36 @@ public class MainFrame extends JFrame {
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BORDER),
 			BorderFactory.createEmptyBorder(0, 24, 0, 24)
 		));
-		headerPanel.setPreferredSize(new Dimension(0, 52));
+		headerPanel.setPreferredSize(new Dimension(0, 50));
 		headerPanel.setLayout(new BorderLayout());
 
 		// Left: App name
-		var lblPageTitle = new JLabel("MEPHAR QUẢN LÝ");
-		lblPageTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+		var lblPageTitle = new JLabel("MEPHAR Quản Lý");
+		lblPageTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
 		lblPageTitle.setForeground(ColorScheme.PRIMARY);
 		headerPanel.add(lblPageTitle, BorderLayout.WEST);
 
 		// Right: User badge + Logout
-		var userPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 12, 8));
+		var userPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 10, 7));
 		userPanel.setOpaque(false);
 
-		// User info badge
-		var lblUser = new JLabel("👤 " + currentUser.getHoTen());
-		lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		// Role badge
+		var lblRole = new JLabel(currentUser.getVaiTro());
+		lblRole.setFont(new Font("Segoe UI", Font.BOLD, 11));
+		lblRole.setForeground(ColorScheme.PRIMARY);
+		lblRole.setOpaque(true);
+		lblRole.setBackground(ColorScheme.PRIMARY_LIGHT);
+		lblRole.setBorder(new javax.swing.border.EmptyBorder(4, 10, 4, 10));
+		userPanel.add(lblRole);
+
+		// User name (no emoji)
+		var lblUser = new JLabel(currentUser.getHoTen());
+		lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		lblUser.setForeground(ColorScheme.TEXT_PRIMARY);
-		lblUser.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
-			new javax.swing.border.EmptyBorder(6, 12, 6, 12)
-		));
-		lblUser.setOpaque(true);
-		lblUser.setBackground(ColorScheme.BACKGROUND);
 		userPanel.add(lblUser);
 
-		// Outline logout button
-		var btnLogout = common.UIHelper.createOutlineButton("Đăng xuất", ColorScheme.DANGER);
+		// Soft outline logout
+		var btnLogout = common.UIHelper.createOutlineButton("Đăng xuất", new java.awt.Color(180, 80, 80));
 		btnLogout.addActionListener(e -> {
 			int option = javax.swing.JOptionPane.showConfirmDialog(
 				this, "Bạn có muốn đăng xuất không?", "Đăng xuất", javax.swing.JOptionPane.YES_NO_OPTION

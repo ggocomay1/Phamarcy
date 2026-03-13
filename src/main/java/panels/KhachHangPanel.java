@@ -1,362 +1,393 @@
 package panels;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.TitledBorder;
-
-import common.ColorScheme;
-import common.UIHelper;
 import components.KhachHangTableModel;
 import dao.KhachHangDao;
 import entity.KhachHang;
 import entity.NguoiDung;
 
 /**
- * KhachHangPanel - Panel quản lý khách hàng
- * 
- * @author Generated
- * @version 1.0
+ * KhachHangPanel v5.0 - GridBagLayout form, ti\u1EBFng Vi\u1EC7t c\u00F3 d\u1EA5u
  */
 public class KhachHangPanel extends JPanel {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private KhachHangDao dao;
-	private KhachHangTableModel tableModel;
-	private JTable table;
-	private JTextField txtMaKH;
-	private JTextField txtHoTen;
-	private JTextField txtSoDienThoai;
-	private JTextField txtEmail;
-	private JTextField txtDiaChi;
-	private JTextArea txtHoSoBenhAn;
-	private JButton btnThem;
-	private JButton btnSua;
-	private JButton btnXoa;
-	private JButton btnLamMoi;
+    // Palette
+    private static final Color BG_PAGE    = new Color(0xF5, 0xF8, 0xFB);
+    private static final Color BG_CARD    = Color.WHITE;
+    private static final Color BORDER_CLR = new Color(0xE3, 0xEA, 0xF2);
+    private static final Color TXT_PRI    = new Color(0x1F, 0x2D, 0x3D);
+    private static final Color TXT_SEC    = new Color(0x6B, 0x7A, 0x8C);
+    private static final Color GREEN      = new Color(0x2F, 0xA3, 0x6B);
+    private static final Color RED        = new Color(0xE5, 0x48, 0x4D);
+    private static final Color GRAY       = new Color(0xC9, 0xCE, 0xD6);
+    private static final Color INPUT_DIS  = new Color(0xF0, 0xF2, 0xF5);
+    private static final Color TBL_HDR    = new Color(0xF8, 0xF9, 0xFA);
+    private static final Color TBL_SEL    = new Color(0xE8, 0xF5, 0xEE);
 
-	/**
-	 * Create the panel.
-	 */
-	public KhachHangPanel(NguoiDung currentUser) {
-		dao = new KhachHangDao();
-		initialize();
-		loadData();
-	}
+    // Fonts
+    private static final Font F_TITLE = new Font("Segoe UI", Font.BOLD, 22);
+    private static final Font F_SEC   = new Font("Segoe UI", Font.BOLD, 15);
+    private static final Font F_LABEL = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font F_INPUT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font F_BTN   = new Font("Segoe UI", Font.BOLD, 13);
+    private static final Font F_TBL   = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font F_TBL_H = new Font("Segoe UI", Font.BOLD, 13);
 
-	/**
-	 * Initialize the contents of the panel.
-	 */
-	private void initialize() {
-		setLayout(new BorderLayout());
-		setBackground(ColorScheme.BACKGROUND);
-		setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    // Sizes
+    private static final int FIELD_H    = 36;
+    private static final int BTN_H      = 40;
+    private static final int TEXTAREA_H = 100;
 
-		var titlePanel = new JPanel(new BorderLayout());
-		titlePanel.setOpaque(false);
-		var lblTitle = new JLabel("Quản lý khách hàng");
-		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
-		lblTitle.setForeground(ColorScheme.TEXT_PRIMARY);
-		titlePanel.add(lblTitle, BorderLayout.WEST);
-		add(titlePanel, BorderLayout.NORTH);
+    private KhachHangDao dao;
+    private KhachHangTableModel tableModel;
+    private JTable table;
+    private JTextField txtMaKH, txtHoTen, txtSoDienThoai, txtEmail, txtDiaChi;
+    private JTextArea txtHoSoBenhAn;
+    private JButton btnThem, btnSua, btnXoa, btnLamMoi;
 
-		var mainPanel = new JPanel(new BorderLayout(15, 0));
-		mainPanel.setOpaque(false);
+    public KhachHangPanel(NguoiDung currentUser) {
+        dao = new KhachHangDao();
+        buildUI();
+        loadData();
+    }
 
-		var formPanel = createFormPanel();
-		mainPanel.add(formPanel, BorderLayout.WEST);
+    // ================================================================
+    //  MAIN LAYOUT
+    // ================================================================
 
-		var tablePanel = createTablePanel();
-		mainPanel.add(tablePanel, BorderLayout.CENTER);
+    private void buildUI() {
+        setLayout(new BorderLayout());
+        setBackground(BG_PAGE);
+        setBorder(new EmptyBorder(20, 20, 20, 20));
 
-		add(mainPanel, BorderLayout.CENTER);
-	}
+        // Title
+        var titleLbl = new JLabel("Qu\u1EA3n l\u00FD kh\u00E1ch h\u00E0ng");
+        titleLbl.setFont(F_TITLE);
+        titleLbl.setForeground(TXT_PRI);
+        titleLbl.setBorder(new EmptyBorder(0, 0, 14, 0));
+        add(titleLbl, BorderLayout.NORTH);
 
-	/**
-	 * Tạo form panel
-	 */
-	private JPanel createFormPanel() {
-		var panel = new JPanel();
-		panel.setBackground(ColorScheme.PANEL_BG);
-		panel.setBorder(new TitledBorder(
-			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
-			"Thông tin khách hàng",
-			TitledBorder.LEADING,
-			TitledBorder.TOP,
-			new Font("Segoe UI", Font.BOLD, 14),
-			ColorScheme.TEXT_PRIMARY
-		));
-		panel.setLayout(null);
-		panel.setPreferredSize(new java.awt.Dimension(350, 0));
+        // Main split
+        var main = new JPanel(new BorderLayout(16, 0));
+        main.setOpaque(false);
+        main.add(buildFormCard(), BorderLayout.WEST);
+        main.add(buildTableCard(), BorderLayout.CENTER);
+        add(main, BorderLayout.CENTER);
+    }
 
-		int y = 30;
-		int labelWidth = 120;
-		int fieldWidth = 200;
-		int fieldHeight = 30;
-		int spacing = 40;
+    // ================================================================
+    //  FORM CARD (GridBagLayout)
+    // ================================================================
 
-		var lblMaKH = new JLabel("Mã KH:");
-		lblMaKH.setBounds(20, y, labelWidth, 25);
-		panel.add(lblMaKH);
+    private JPanel buildFormCard() {
+        var card = new JPanel(new BorderLayout(0, 0));
+        card.setBackground(BG_CARD);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_CLR, 1),
+            new EmptyBorder(18, 18, 18, 18)
+        ));
+        card.setPreferredSize(new Dimension(370, 0));
 
-		txtMaKH = new JTextField();
-		txtMaKH.setEditable(false);
-		txtMaKH.setBackground(ColorScheme.INPUT_DISABLED);
-		txtMaKH.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
-		txtMaKH.setBounds(140, y, fieldWidth, fieldHeight);
-		panel.add(txtMaKH);
+        // Section title
+        var secLabel = new JLabel("Th\u00F4ng tin kh\u00E1ch h\u00E0ng");
+        secLabel.setFont(F_SEC);
+        secLabel.setForeground(TXT_PRI);
+        secLabel.setBorder(new EmptyBorder(0, 0, 14, 0));
+        card.add(secLabel, BorderLayout.NORTH);
 
-		y += spacing;
+        // Form fields
+        card.add(buildFormFields(), BorderLayout.CENTER);
 
-		var lblHoTen = new JLabel("Họ tên:*");
-		lblHoTen.setBounds(20, y, labelWidth, 25);
-		panel.add(lblHoTen);
+        // Buttons
+        card.add(buildButtonGrid(), BorderLayout.SOUTH);
 
-		txtHoTen = new JTextField();
-		txtHoTen.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
-		txtHoTen.setBounds(140, y, fieldWidth, fieldHeight);
-		panel.add(txtHoTen);
+        return card;
+    }
 
-		y += spacing;
+    private JPanel buildFormFields() {
+        var form = new JPanel(new GridBagLayout());
+        form.setBackground(BG_CARD);
+        var gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        int row = 0;
 
-		var lblSoDienThoai = new JLabel("Số điện thoại:");
-		lblSoDienThoai.setBounds(20, y, labelWidth, 25);
-		panel.add(lblSoDienThoai);
+        // M\u00E3 KH
+        txtMaKH = makeField(FIELD_H);
+        txtMaKH.setEditable(false);
+        txtMaKH.setBackground(INPUT_DIS);
+        addRow(form, gbc, row++, "M\u00E3 KH:", txtMaKH, FIELD_H);
 
-		txtSoDienThoai = new JTextField();
-		txtSoDienThoai.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
-		txtSoDienThoai.setBounds(140, y, fieldWidth, fieldHeight);
-		panel.add(txtSoDienThoai);
+        // H\u1ECD t\u00EAn
+        txtHoTen = makeField(FIELD_H);
+        addRow(form, gbc, row++, "H\u1ECD t\u00EAn: *", txtHoTen, FIELD_H);
 
-		y += spacing;
+        // S\u1ED1 \u0111i\u1EC7n tho\u1EA1i
+        txtSoDienThoai = makeField(FIELD_H);
+        addRow(form, gbc, row++, "S\u1ED1 \u0111i\u1EC7n tho\u1EA1i:", txtSoDienThoai, FIELD_H);
 
-		var lblEmail = new JLabel("Email:");
-		lblEmail.setBounds(20, y, labelWidth, 25);
-		panel.add(lblEmail);
+        // Email
+        txtEmail = makeField(FIELD_H);
+        addRow(form, gbc, row++, "Email:", txtEmail, FIELD_H);
 
-		txtEmail = new JTextField();
-		txtEmail.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
-		txtEmail.setBounds(140, y, fieldWidth, fieldHeight);
-		panel.add(txtEmail);
+        // \u0110\u1ECBa ch\u1EC9
+        txtDiaChi = makeField(FIELD_H);
+        addRow(form, gbc, row++, "\u0110\u1ECBa ch\u1EC9:", txtDiaChi, FIELD_H);
 
-		y += spacing;
+        // H\u1ED3 s\u01A1 b\u1EC7nh \u00E1n (textarea)
+        txtHoSoBenhAn = new JTextArea();
+        txtHoSoBenhAn.setFont(F_INPUT);
+        txtHoSoBenhAn.setLineWrap(true);
+        txtHoSoBenhAn.setWrapStyleWord(true);
+        var scrollTA = new JScrollPane(txtHoSoBenhAn);
+        scrollTA.setBorder(BorderFactory.createLineBorder(BORDER_CLR, 1));
+        addRow(form, gbc, row++, "H\u1ED3 s\u01A1 b\u1EC7nh \u00E1n:", scrollTA, TEXTAREA_H);
 
-		var lblDiaChi = new JLabel("Địa chỉ:");
-		lblDiaChi.setBounds(20, y, labelWidth, 25);
-		panel.add(lblDiaChi);
+        // Spacer
+        gbc.gridx = 0; gbc.gridy = row; gbc.weighty = 1.0;
+        form.add(Box.createVerticalGlue(), gbc);
 
-		txtDiaChi = new JTextField();
-		txtDiaChi.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
-		txtDiaChi.setBounds(140, y, fieldWidth, fieldHeight);
-		panel.add(txtDiaChi);
+        return form;
+    }
 
-		y += spacing;
+    /** Add label + component row to GridBagLayout form */
+    private void addRow(JPanel form, GridBagConstraints gbc, int row, String labelText, JComponent comp, int compH) {
+        gbc.gridy = row;
+        gbc.weighty = 0;
+        gbc.insets = new Insets(row == 0 ? 0 : 5, 0, 5, 10);
 
-		var lblHoSo = new JLabel("Hồ sơ bệnh án:");
-		lblHoSo.setBounds(20, y, labelWidth, 25);
-		panel.add(lblHoSo);
+        // Label
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        var lbl = new JLabel(labelText);
+        lbl.setFont(F_LABEL);
+        lbl.setForeground(TXT_SEC);
+        lbl.setPreferredSize(new Dimension(110, FIELD_H));
+        form.add(lbl, gbc);
 
-		txtHoSoBenhAn = new JTextArea();
-		txtHoSoBenhAn.setLineWrap(true);
-		txtHoSoBenhAn.setWrapStyleWord(true);
-		var scrollHoSo = new JScrollPane(txtHoSoBenhAn);
-		scrollHoSo.setBounds(140, y, fieldWidth, 60);
-		panel.add(scrollHoSo);
+        // Field
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        comp.setPreferredSize(new Dimension(200, compH));
+        comp.setMinimumSize(new Dimension(100, compH));
+        form.add(comp, gbc);
+    }
 
-		y += 70;
+    private JPanel buildButtonGrid() {
+        var bp = new JPanel(new GridLayout(2, 2, 10, 10));
+        bp.setBackground(BG_CARD);
+        bp.setBorder(new EmptyBorder(16, 0, 0, 0));
+        bp.setPreferredSize(new Dimension(0, BTN_H * 2 + 10));
 
-		btnThem = UIHelper.createSuccessButton("Thêm mới");
-		btnThem.setBounds(20, y, 100, 38);
-		btnThem.addActionListener(e -> handleThem());
-		panel.add(btnThem);
+        btnThem   = makeBtn("Th\u00EAm m\u1EDBi", GREEN, Color.WHITE);
+        btnSua    = makeBtn("C\u1EADp nh\u1EADt", GREEN, Color.WHITE);
+        btnXoa    = makeBtn("X\u00F3a", RED, Color.WHITE);
+        btnLamMoi = makeBtn("L\u00E0m m\u1EDBi", GRAY, TXT_PRI);
 
-		btnSua = UIHelper.createPrimaryButton("Cập nhật");
-		btnSua.setBounds(130, y, 100, 38);
-		btnSua.addActionListener(e -> handleSua());
-		panel.add(btnSua);
+        btnThem.addActionListener(e -> handleThem());
+        btnSua.addActionListener(e -> handleSua());
+        btnXoa.addActionListener(e -> handleXoa());
+        btnLamMoi.addActionListener(e -> handleLamMoi());
 
-		btnXoa = UIHelper.createDangerButton("Xóa");
-		btnXoa.setBounds(240, y, 100, 38);
-		btnXoa.addActionListener(e -> handleXoa());
-		panel.add(btnXoa);
+        bp.add(btnThem);
+        bp.add(btnSua);
+        bp.add(btnXoa);
+        bp.add(btnLamMoi);
 
-		y += 48;
+        return bp;
+    }
 
-		btnLamMoi = UIHelper.createNeutralButton("Làm mới");
-		btnLamMoi.setBounds(20, y, 320, 38);
-		btnLamMoi.addActionListener(e -> handleLamMoi());
-		panel.add(btnLamMoi);
+    // ================================================================
+    //  TABLE CARD
+    // ================================================================
 
-		return panel;
-	}
+    private JPanel buildTableCard() {
+        var card = new JPanel(new BorderLayout(0, 10));
+        card.setBackground(BG_CARD);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_CLR, 1),
+            new EmptyBorder(18, 18, 18, 18)
+        ));
 
-	/**
-	 * Tạo table panel
-	 */
-	private JPanel createTablePanel() {
-		var panel = new JPanel(new BorderLayout());
-		panel.setBackground(ColorScheme.PANEL_BG);
-		panel.setBorder(new TitledBorder(
-			BorderFactory.createLineBorder(ColorScheme.BORDER, 1),
-			"Danh sách khách hàng",
-			TitledBorder.LEADING,
-			TitledBorder.TOP,
-			new Font("Segoe UI", Font.BOLD, 14),
-			ColorScheme.TEXT_PRIMARY
-		));
+        var sec = new JLabel("Danh s\u00E1ch kh\u00E1ch h\u00E0ng");
+        sec.setFont(F_SEC);
+        sec.setForeground(TXT_PRI);
+        card.add(sec, BorderLayout.NORTH);
 
-		tableModel = new KhachHangTableModel();
-		table = new JTable(tableModel);
-		table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		table.setRowHeight(25);
-		table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-		table.setShowGrid(true);
-		table.setGridColor(ColorScheme.BORDER);
-		table.getSelectionModel().addListSelectionListener(e -> {
-			if (!e.getValueIsAdjusting()) {
-				handleTableSelection();
-			}
-		});
+        tableModel = new KhachHangTableModel();
+        table = new JTable(tableModel);
+        styleTable(table);
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) handleTableSelection();
+        });
 
-		var scrollPane = new JScrollPane(table);
-		scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER));
-		panel.add(scrollPane, BorderLayout.CENTER);
+        var sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createLineBorder(BORDER_CLR));
+        sp.getViewport().setBackground(BG_CARD);
+        card.add(sp, BorderLayout.CENTER);
+        return card;
+    }
 
-		return panel;
-	}
+    private void styleTable(JTable t) {
+        t.setFont(F_TBL); t.setRowHeight(34);
+        t.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        t.setShowHorizontalLines(true); t.setShowVerticalLines(false);
+        t.setGridColor(BORDER_CLR);
+        t.setIntercellSpacing(new Dimension(0, 1));
+        t.setSelectionBackground(TBL_SEL);
+        t.setSelectionForeground(TXT_PRI);
 
+        JTableHeader h = t.getTableHeader();
+        h.setFont(F_TBL_H); h.setBackground(TBL_HDR);
+        h.setForeground(TXT_SEC);
+        h.setPreferredSize(new Dimension(0, 40));
+        h.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, BORDER_CLR));
 
-	private void loadData() {
-		tableModel.setRowCount(0);
-		var list = dao.getAll();
-		for (var kh : list) {
-			tableModel.addRow(new Object[]{
-				kh.getMaKhachHang(),
-				kh.getHoTen(),
-				kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "",
-				kh.getEmail() != null ? kh.getEmail() : "",
-				kh.getDiaChi() != null ? kh.getDiaChi() : ""
-			});
-		}
-	}
+        var ctr = new DefaultTableCellRenderer();
+        ctr.setHorizontalAlignment(SwingConstants.CENTER);
+        if (t.getColumnCount() > 0) {
+            t.getColumnModel().getColumn(0).setCellRenderer(ctr);
+            t.getColumnModel().getColumn(0).setPreferredWidth(60);
+        }
+    }
 
-	private void handleTableSelection() {
-		int row = table.getSelectedRow();
-		if (row >= 0) {
-			int maKH = (Integer) tableModel.getValueAt(row, 0);
-			var kh = dao.findById(maKH);
-			if (kh != null) {
-				fillForm(kh);
-			}
-		}
-	}
+    // ================================================================
+    //  COMPONENT HELPERS
+    // ================================================================
 
-	private void fillForm(KhachHang kh) {
-		txtMaKH.setText(String.valueOf(kh.getMaKhachHang()));
-		txtHoTen.setText(kh.getHoTen());
-		txtSoDienThoai.setText(kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "");
-		txtEmail.setText(kh.getEmail() != null ? kh.getEmail() : "");
-		txtDiaChi.setText(kh.getDiaChi() != null ? kh.getDiaChi() : "");
-		txtHoSoBenhAn.setText(kh.getHoSoBenhAn() != null ? kh.getHoSoBenhAn() : "");
-	}
+    private JTextField makeField(int h) {
+        var tf = new JTextField();
+        tf.setFont(F_INPUT);
+        tf.setBackground(Color.WHITE);
+        tf.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_CLR, 1),
+            new EmptyBorder(4, 8, 4, 8)
+        ));
+        tf.setPreferredSize(new Dimension(200, h));
+        return tf;
+    }
 
-	private void handleThem() {
-		if (!validateForm()) {
-			return;
-		}
+    private JButton makeBtn(String text, Color bg, Color fg) {
+        var b = new JButton(text);
+        b.setFont(F_BTN); b.setBackground(bg); b.setForeground(fg);
+        b.setFocusPainted(false); b.setBorderPainted(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.putClientProperty("JButton.buttonType", "roundRect");
+        Color hov = bg.darker();
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { if (b.isEnabled()) b.setBackground(hov); }
+            public void mouseExited(java.awt.event.MouseEvent e)  { if (b.isEnabled()) b.setBackground(bg); }
+        });
+        return b;
+    }
 
-		var kh = new KhachHang();
-		kh.setHoTen(txtHoTen.getText().trim());
-		kh.setSoDienThoai(txtSoDienThoai.getText().trim().isEmpty() ? null : txtSoDienThoai.getText().trim());
-		kh.setEmail(txtEmail.getText().trim().isEmpty() ? null : txtEmail.getText().trim());
-		kh.setDiaChi(txtDiaChi.getText().trim().isEmpty() ? null : txtDiaChi.getText().trim());
-		kh.setHoSoBenhAn(txtHoSoBenhAn.getText().trim().isEmpty() ? null : txtHoSoBenhAn.getText().trim());
+    // ================================================================
+    //  DATA + CRUD
+    // ================================================================
 
-		if (dao.insert(kh)) {
-			JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-			handleLamMoi();
-			loadData();
-		} else {
-			JOptionPane.showMessageDialog(this, "Thêm khách hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-		}
-	}
+    private void loadData() {
+        tableModel.setRowCount(0);
+        for (var kh : dao.getAll()) {
+            tableModel.addRow(new Object[]{
+                kh.getMaKhachHang(), kh.getHoTen(),
+                kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "",
+                kh.getEmail() != null ? kh.getEmail() : "",
+                kh.getDiaChi() != null ? kh.getDiaChi() : ""
+            });
+        }
+    }
 
-	private void handleSua() {
-		if (txtMaKH.getText().isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần sửa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
+    private void handleTableSelection() {
+        int row = table.getSelectedRow();
+        if (row >= 0) {
+            var kh = dao.findById((Integer) tableModel.getValueAt(row, 0));
+            if (kh != null) fillForm(kh);
+        }
+    }
 
-		if (!validateForm()) {
-			return;
-		}
+    private void fillForm(KhachHang kh) {
+        txtMaKH.setText(String.valueOf(kh.getMaKhachHang()));
+        txtHoTen.setText(kh.getHoTen());
+        txtSoDienThoai.setText(kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "");
+        txtEmail.setText(kh.getEmail() != null ? kh.getEmail() : "");
+        txtDiaChi.setText(kh.getDiaChi() != null ? kh.getDiaChi() : "");
+        txtHoSoBenhAn.setText(kh.getHoSoBenhAn() != null ? kh.getHoSoBenhAn() : "");
+    }
 
-		var kh = new KhachHang();
-		kh.setMaKhachHang(Integer.parseInt(txtMaKH.getText()));
-		kh.setHoTen(txtHoTen.getText().trim());
-		kh.setSoDienThoai(txtSoDienThoai.getText().trim().isEmpty() ? null : txtSoDienThoai.getText().trim());
-		kh.setEmail(txtEmail.getText().trim().isEmpty() ? null : txtEmail.getText().trim());
-		kh.setDiaChi(txtDiaChi.getText().trim().isEmpty() ? null : txtDiaChi.getText().trim());
-		kh.setHoSoBenhAn(txtHoSoBenhAn.getText().trim().isEmpty() ? null : txtHoSoBenhAn.getText().trim());
+    private void handleThem() {
+        if (!validateForm()) return;
+        var kh = new KhachHang();
+        kh.setHoTen(txtHoTen.getText().trim());
+        kh.setSoDienThoai(txtSoDienThoai.getText().trim().isEmpty() ? null : txtSoDienThoai.getText().trim());
+        kh.setEmail(txtEmail.getText().trim().isEmpty() ? null : txtEmail.getText().trim());
+        kh.setDiaChi(txtDiaChi.getText().trim().isEmpty() ? null : txtDiaChi.getText().trim());
+        kh.setHoSoBenhAn(txtHoSoBenhAn.getText().trim().isEmpty() ? null : txtHoSoBenhAn.getText().trim());
+        if (dao.insert(kh)) {
+            JOptionPane.showMessageDialog(this, "Th\u00EAm kh\u00E1ch h\u00E0ng th\u00E0nh c\u00F4ng!", "Th\u00F4ng b\u00E1o", JOptionPane.INFORMATION_MESSAGE);
+            handleLamMoi(); loadData();
+        } else {
+            JOptionPane.showMessageDialog(this, "Th\u00EAm kh\u00E1ch h\u00E0ng th\u1EA5t b\u1EA1i!", "L\u1ED7i", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-		if (dao.update(kh)) {
-			JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-			handleLamMoi();
-			loadData();
-		} else {
-			JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-		}
-	}
+    private void handleSua() {
+        if (txtMaKH.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui l\u00F2ng ch\u1ECDn kh\u00E1ch h\u00E0ng c\u1EA7n s\u1EEDa!", "Th\u00F4ng b\u00E1o", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!validateForm()) return;
+        var kh = new KhachHang();
+        kh.setMaKhachHang(Integer.parseInt(txtMaKH.getText()));
+        kh.setHoTen(txtHoTen.getText().trim());
+        kh.setSoDienThoai(txtSoDienThoai.getText().trim().isEmpty() ? null : txtSoDienThoai.getText().trim());
+        kh.setEmail(txtEmail.getText().trim().isEmpty() ? null : txtEmail.getText().trim());
+        kh.setDiaChi(txtDiaChi.getText().trim().isEmpty() ? null : txtDiaChi.getText().trim());
+        kh.setHoSoBenhAn(txtHoSoBenhAn.getText().trim().isEmpty() ? null : txtHoSoBenhAn.getText().trim());
+        if (dao.update(kh)) {
+            JOptionPane.showMessageDialog(this, "C\u1EADp nh\u1EADt th\u00E0nh c\u00F4ng!", "Th\u00F4ng b\u00E1o", JOptionPane.INFORMATION_MESSAGE);
+            handleLamMoi(); loadData();
+        } else {
+            JOptionPane.showMessageDialog(this, "C\u1EADp nh\u1EADt th\u1EA5t b\u1EA1i!", "L\u1ED7i", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-	private void handleXoa() {
-		if (txtMaKH.getText().isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần xóa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
+    private void handleXoa() {
+        if (txtMaKH.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui l\u00F2ng ch\u1ECDn kh\u00E1ch h\u00E0ng c\u1EA7n x\u00F3a!", "Th\u00F4ng b\u00E1o", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int opt = JOptionPane.showConfirmDialog(this, "X\u00E1c nh\u1EADn x\u00F3a kh\u00E1ch h\u00E0ng n\u00E0y?", "X\u00E1c nh\u1EADn", JOptionPane.YES_NO_OPTION);
+        if (opt == JOptionPane.YES_OPTION) {
+            if (dao.delete(Integer.parseInt(txtMaKH.getText()))) {
+                JOptionPane.showMessageDialog(this, "X\u00F3a th\u00E0nh c\u00F4ng!", "Th\u00F4ng b\u00E1o", JOptionPane.INFORMATION_MESSAGE);
+                handleLamMoi(); loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "X\u00F3a th\u1EA5t b\u1EA1i!", "L\u1ED7i", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
 
-		int option = JOptionPane.showConfirmDialog(this,
-			"Bạn có chắc chắn muốn xóa khách hàng này?",
-			"Xác nhận xóa",
-			JOptionPane.YES_NO_OPTION);
+    private void handleLamMoi() {
+        txtMaKH.setText(""); txtHoTen.setText(""); txtSoDienThoai.setText("");
+        txtEmail.setText(""); txtDiaChi.setText(""); txtHoSoBenhAn.setText("");
+        table.clearSelection();
+    }
 
-		if (option == JOptionPane.YES_OPTION) {
-			int maKH = Integer.parseInt(txtMaKH.getText());
-			if (dao.delete(maKH)) {
-				JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-				handleLamMoi();
-				loadData();
-			} else {
-				JOptionPane.showMessageDialog(this, "Xóa khách hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-			}
-		}
-	}
-
-	private void handleLamMoi() {
-		txtMaKH.setText("");
-		txtHoTen.setText("");
-		txtSoDienThoai.setText("");
-		txtEmail.setText("");
-		txtDiaChi.setText("");
-		txtHoSoBenhAn.setText("");
-		table.clearSelection();
-	}
-
-	private boolean validateForm() {
-		if (txtHoTen.getText().trim().isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập họ tên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-			txtHoTen.requestFocus();
-			return false;
-		}
-		return true;
-	}
+    private boolean validateForm() {
+        if (txtHoTen.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui l\u00F2ng nh\u1EADp h\u1ECD t\u00EAn!", "L\u1ED7i", JOptionPane.ERROR_MESSAGE);
+            txtHoTen.requestFocus();
+            return false;
+        }
+        return true;
+    }
 }

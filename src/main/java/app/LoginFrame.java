@@ -2,8 +2,11 @@ package app;
 
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.util.Base64;
+import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -17,6 +20,8 @@ import javax.swing.border.EmptyBorder;
 import com.formdev.flatlaf.FlatClientProperties;
 import common.ColorScheme;
 import dao.NguoiDungDao;
+import common.AppLogger;
+import service.AuditService;
 import entity.NguoiDung;
 
 /**
@@ -32,6 +37,13 @@ public class LoginFrame extends JFrame {
 	private JPasswordField txtPassword;
 	private JButton btnLogin;
 	private JButton btnExit;
+	private JCheckBox chkRememberMe;
+
+	// Preferences keys for Remember Me
+	private static final String PREF_KEY_REMEMBER = "rememberMe";
+	private static final String PREF_KEY_USERNAME = "savedUsername";
+	private static final String PREF_KEY_PASSWORD = "savedPassword";
+	private static final Preferences prefs = Preferences.userNodeForPackage(LoginFrame.class);
 
 	/**
 	 * Create the frame.
@@ -145,6 +157,20 @@ public class LoginFrame extends JFrame {
 		txtPassword.addActionListener(this::btnLoginActionPerformed);
 		formPanel.add(txtPassword, gbc);
 
+		// Remember Me checkbox
+		gbc.gridy = 4;
+		gbc.fill = java.awt.GridBagConstraints.NONE;
+		gbc.weightx = 0;
+		gbc.anchor = java.awt.GridBagConstraints.WEST;
+		gbc.insets = new java.awt.Insets(10, 5, 5, 5);
+		chkRememberMe = new JCheckBox("Ghi nhớ đăng nhập");
+		chkRememberMe.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		chkRememberMe.setForeground(ColorScheme.TEXT_SECONDARY);
+		chkRememberMe.setOpaque(false);
+		chkRememberMe.setFocusPainted(false);
+		chkRememberMe.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+		formPanel.add(chkRememberMe, gbc);
+
 		mainContainer.add(formPanel, java.awt.BorderLayout.CENTER);
 
 		// Buttons Panel
@@ -206,8 +232,8 @@ public class LoginFrame extends JFrame {
 		setResizable(false);
 		setLocationRelativeTo(null);
 
-		// Focus on username field
-		txtUsername.requestFocus();
+		// Load saved credentials if Remember Me was checked
+		loadSavedCredentials();
 	}
 
 	/**
@@ -240,7 +266,12 @@ public class LoginFrame extends JFrame {
 		NguoiDung nguoiDung = dao.login(username, password);
 
 		if (nguoiDung != null) {
+			// Lưu hoặc xóa thông tin đăng nhập theo checkbox
+			handleRememberMe(username, password);
+
 			// Đăng nhập thành công
+			AppLogger.get(LoginFrame.class).info("[LOGIN] Thành công: user=" + username + " (" + nguoiDung.getHoTen() + ")");
+			AuditService.logLogin(username, true);
 			JOptionPane.showMessageDialog(this,
 					"Đăng nhập thành công!\nXin chào: " + nguoiDung.getHoTen(),
 					"Thông báo",
@@ -252,6 +283,8 @@ public class LoginFrame extends JFrame {
 			mainFrame.setVisible(true);
 		} else {
 			// Đăng nhập thất bại
+			AppLogger.get(LoginFrame.class).warning("[LOGIN] Thất bại: user=" + username);
+			AuditService.logLogin(username, false);
 			JOptionPane.showMessageDialog(this,
 					"Tên đăng nhập hoặc mật khẩu không đúng!",
 					"Lỗi đăng nhập",
@@ -259,6 +292,54 @@ public class LoginFrame extends JFrame {
 			txtPassword.setText("");
 			txtUsername.requestFocus();
 		}
+	}
+
+	/**
+	 * Lưu thông tin đăng nhập nếu checkbox được chọn
+	 */
+	private void handleRememberMe(String username, String password) {
+		if (chkRememberMe.isSelected()) {
+			prefs.putBoolean(PREF_KEY_REMEMBER, true);
+			prefs.put(PREF_KEY_USERNAME, username);
+			prefs.put(PREF_KEY_PASSWORD, Base64.getEncoder().encodeToString(password.getBytes()));
+		} else {
+			clearSavedCredentials();
+		}
+	}
+
+	/**
+	 * Đọc thông tin đăng nhập đã lưu và điền vào form
+	 */
+	private void loadSavedCredentials() {
+		boolean remembered = prefs.getBoolean(PREF_KEY_REMEMBER, false);
+		if (remembered) {
+			String savedUser = prefs.get(PREF_KEY_USERNAME, "");
+			String savedPassB64 = prefs.get(PREF_KEY_PASSWORD, "");
+			if (!savedUser.isEmpty() && !savedPassB64.isEmpty()) {
+				try {
+					String decodedPass = new String(Base64.getDecoder().decode(savedPassB64));
+					txtUsername.setText(savedUser);
+					txtPassword.setText(decodedPass);
+					chkRememberMe.setSelected(true);
+					// Focus vào nút đăng nhập thay vì username
+					btnLogin.requestFocus();
+					return;
+				} catch (Exception e) {
+					clearSavedCredentials();
+				}
+			}
+		}
+		// Nếu không có dữ liệu lưu, focus vào username
+		txtUsername.requestFocus();
+	}
+
+	/**
+	 * Xóa thông tin đăng nhập đã lưu
+	 */
+	private void clearSavedCredentials() {
+		prefs.putBoolean(PREF_KEY_REMEMBER, false);
+		prefs.remove(PREF_KEY_USERNAME);
+		prefs.remove(PREF_KEY_PASSWORD);
 	}
 
 	/**

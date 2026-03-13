@@ -331,7 +331,7 @@ public class SanPhamDao {
 				"ISNULL((SELECT SUM(SoLuongTon) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham), 0) AS TongTon " +
 				"FROM SanPham sp WHERE sp.DaXoa = 0 ";
 		if (keyword != null && !keyword.trim().isEmpty()) {
-			sql += "AND (sp.TenSanPham LIKE ? OR CAST(sp.MaSanPham AS NVARCHAR) LIKE ?) ";
+			sql += "AND (sp.TenSanPham LIKE ? OR CAST(sp.MaSanPham AS NVARCHAR) LIKE ? OR ISNULL(sp.Barcode,'') LIKE ?) ";
 		}
 		sql += "ORDER BY sp.TenSanPham ASC";
 
@@ -341,6 +341,7 @@ public class SanPhamDao {
 				String pattern = "%" + keyword.trim() + "%";
 				ps.setNString(1, pattern);
 				ps.setNString(2, pattern);
+				ps.setNString(3, pattern);
 			}
 			var rs = ps.executeQuery();
 			while (rs.next()) {
@@ -366,6 +367,8 @@ public class SanPhamDao {
 		sp.setMoTa(rs.getString("MoTa"));
 		sp.setMucTonToiThieu(rs.getInt("MucTonToiThieu"));
 
+		try { sp.setBarcode(rs.getString("Barcode")); } catch (Exception ignore) {}
+
 		sp.setDaXoa(rs.getBoolean("DaXoa"));
 		if (rs.getTimestamp("NgayTao") != null) {
 			sp.setNgayTao(rs.getTimestamp("NgayTao").toLocalDateTime());
@@ -383,5 +386,23 @@ public class SanPhamDao {
 		} catch (Exception ignore) {}
 		
 		return sp;
+	}
+
+	/**
+	 * Tìm sản phẩm theo barcode (quét mã)
+	 */
+	public SanPham findByBarcode(String barcode) {
+		if (barcode == null || barcode.trim().isEmpty()) return null;
+		String sql = "SELECT sp.*, " +
+				"ISNULL((SELECT SUM(SoLuongTon) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham), 0) AS TongTon " +
+				"FROM SanPham sp WHERE sp.DaXoa = 0 AND sp.Barcode = ?";
+		try (var con = ConnectDB.getCon(); var ps = con.prepareStatement(sql)) {
+			ps.setString(1, barcode.trim());
+			var rs = ps.executeQuery();
+			if (rs.next()) return mapResultSet(rs);
+		} catch (Exception e) {
+			// Column might not exist yet – silently return null
+		}
+		return null;
 	}
 }

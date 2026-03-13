@@ -1,0 +1,39 @@
+[01:07:47.085] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:07:47.131] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:08:01.858] INFO ConnectDB - Connection pool closed
+[01:17:09.323] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:17:09.355] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:28:13.107] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:28:13.161] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:30:42.509] INFO ConnectDB - Connection pool closed
+[01:33:53.323] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:33:53.375] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:38:16.016] INFO ConnectDB - Connection pool closed
+[01:40:26.278] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:40:26.333] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:41:31.983] INFO ConnectDB - Connection pool closed
+[01:47:07.212] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:47:07.263] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:49:36.023] INFO ConnectDB - Connection pool closed
+[01:52:22.951] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:52:23.015] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[01:53:16.947] INFO ConnectDB - Connection pool closed
+[01:55:49.706] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[01:55:49.773] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[02:12:43.339] INFO ConnectDB - Connection pool closed
+[02:13:06.905] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[02:13:06.961] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[02:34:59.392] INFO ConnectDB - Connection pool closed
+[02:35:32.915] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[02:35:32.966] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[02:36:47.235] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[02:37:23.458] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[02:37:23.515] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quản trị)
+[02:38:37.779] INFO BanHangService - [CHECKOUT] Tạo hóa đơn HD0102 (user=1)
+[02:38:37.810] WARNING BanHangService - [CART] Thêm SP thất bại: HD=102 SP=4 SL=1
+[02:38:48.634] WARNING BanHangService - [CART] Thêm SP thất bại: HD=102 SP=4 SL=1
+[02:38:55.893] WARNING BanHangService - [CART] Thêm SP thất bại: HD=102 SP=175 SL=1
+[02:39:19.230] INFO BanHangService - [CHECKOUT] Tạo hóa đơn HD0103 (user=1)
+[02:39:19.248] WARNING BanHangService - [CART] Thêm SP thất bại: HD=103 SP=155 SL=1
+[02:39:20.987] WARNING BanHangService - [CART] Thêm SP thất bại: HD=103 SP=175 SL=1
+[02:39:28.374] INFO ConnectDB - Connection pool closed

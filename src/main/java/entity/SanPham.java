@@ -13,6 +13,7 @@ public class SanPham {
 	private String donViTinh;
 	private BigDecimal giaBanDeXuat;
 	private String moTa;
+	private String barcode;
 	private int mucTonToiThieu;
 
 	// View/Transient properties liên kết từ LoHang
@@ -55,6 +56,9 @@ public class SanPham {
 
 	public String getMoTa() { return moTa; }
 	public void setMoTa(String moTa) { this.moTa = moTa; }
+
+	public String getBarcode() { return barcode; }
+	public void setBarcode(String barcode) { this.barcode = barcode; }
 
 	public int getMucTonToiThieu() { return mucTonToiThieu; }
 	public void setMucTonToiThieu(int mucTonToiThieu) { this.mucTonToiThieu = mucTonToiThieu; }

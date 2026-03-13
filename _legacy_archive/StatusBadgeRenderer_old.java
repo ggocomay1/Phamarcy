@@ -64,6 +64,7 @@ public class StatusBadgeRenderer extends DefaultTableCellRenderer {
                 label.setForeground(FG_WARNING);
                 break;
             case "đủ hàng":
+            case "còn hàng":
             case "ổn định":
             case "hoàn thành":
             case "đã thanh toán":

@@ -1,11 +1,14 @@
 package service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import dao.ThongKeDao;
 import dao.ThongKeDao.*;
+import service.dto.DashboardSummaryDTO;
+import service.dto.DashboardSummaryDTO.*;
 
 /**
  * DashboardService - Tầng service cho Dashboard Tổng Quan Nhà Thuốc.
@@ -140,5 +143,53 @@ public class DashboardService {
             e.printStackTrace();
             return Map.of();
         }
+    }
+
+    // ===================== AGGREGATED SUMMARY =====================
+
+    /**
+     * Gom tất cả dữ liệu dashboard vào 1 DTO.
+     * Panel chỉ cần gọi method này thay vì 11 method riêng lẻ.
+     */
+    public DashboardSummaryDTO getDashboardSummary() {
+        var dto = new DashboardSummaryDTO();
+        try {
+            ThongKeNgay stats = getThongKeHomNay();
+            dto.hoaDonHomNay = stats.soHoaDon;
+            dto.doanhThuHomNay = stats.doanhThu;
+            dto.doanhThuHomQua = getDoanhThuHomQua();
+            dto.tongSanPham = getTongSanPham();
+            dto.soSanPhamSapHet = getSoSanPhamSapHet();
+            dto.soLoSapHetHan = getSoLoSapHetHan();
+            dto.tongKhachHang = getTongKhachHang();
+
+            // Map DAO inner types -> DTO nested types (field access, not record)
+            var lowList = new ArrayList<LowStockRow>();
+            for (var item : getDanhSachTonKhoThap())
+                lowList.add(new LowStockRow(item.tenSanPham, item.donViTinh, item.tongTon, item.mucTonToiThieu));
+            dto.lowStockItems = lowList;
+
+            var expList = new ArrayList<ExpiringBatchRow>();
+            for (var item : getDanhSachLoSapHetHan()) {
+                String hsd = item.hanSuDung != null ? item.hanSuDung.toString() : "";
+                expList.add(new ExpiringBatchRow(item.tenSanPham, item.soLo, hsd, item.soLuongTon, item.soNgayConLai));
+            }
+            dto.expiringBatches = expList;
+
+            var recList = new ArrayList<RecentInvoiceRow>();
+            for (var item : getHoaDonGanDay())
+                recList.add(new RecentInvoiceRow(item.maHoaDon, item.thoiGian, item.tenNhanVien, item.tenKhachHang, item.tongTien, "Hoàn thành"));
+            dto.recentInvoices = recList;
+
+            var topList = new ArrayList<TopSellingRow>();
+            for (var item : getTopSanPhamBanChayHomNay())
+                topList.add(new TopSellingRow(item.tenSanPham, item.tongSoLuong, item.tongDoanhThu));
+            dto.topSelling = topList;
+
+            dto.inventoryStatus = getTyLeTonKho();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return dto;
     }
 }
