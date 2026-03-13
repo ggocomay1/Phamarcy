@@ -44,6 +44,7 @@ public class LoHangPanel extends JPanel {
 	private JTextField txtSoLuongTon;
 	private JComboBox<String> comboTrangThai;
 	private JButton btnCapNhatTrangThai;
+	private JButton btnXoaLo;
 	private JButton btnLamMoi;
 	private java.util.List<LoHang> currentLoHangList = new java.util.ArrayList<>();
 
@@ -72,10 +73,11 @@ public class LoHangPanel extends JPanel {
 		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
 		lblTitle.setForeground(ColorScheme.TEXT_PRIMARY);
 		titlePanel.add(lblTitle, BorderLayout.WEST);
-		
-		var infoBanner = UIHelper.createInfoBanner("<html>ℹ️ <b>Nghiệp vụ Lô hàng:</b> Quản lý chi tiết từng lô thuốc, theo dõi tồn kho và cảnh báo <b>hạn sử dụng</b> thực tế.</html>");
+
+		var infoBanner = UIHelper.createInfoBanner(
+				"<html>ℹ️ <b>Nghiệp vụ Lô hàng:</b> Quản lý chi tiết từng lô thuốc, theo dõi tồn kho và cảnh báo <b>hạn sử dụng</b> thực tế.</html>");
 		titlePanel.add(infoBanner, BorderLayout.SOUTH);
-		
+
 		add(titlePanel, BorderLayout.NORTH);
 
 		var mainPanel = new JPanel(new BorderLayout(15, 0));
@@ -205,6 +207,13 @@ public class LoHangPanel extends JPanel {
 
 		y += 50;
 
+		btnXoaLo = UIHelper.createDangerButton("Xóa lô hàng này");
+		btnXoaLo.setBounds(20, y, 320, 40);
+		btnXoaLo.addActionListener(e -> handleXoaLo());
+		panel.add(btnXoaLo);
+
+		y += 50;
+
 		btnLamMoi = UIHelper.createNeutralButton("Làm mới");
 		btnLamMoi.setBounds(20, y, 320, 40);
 		btnLamMoi.addActionListener(e -> handleLamMoi());
@@ -284,7 +293,7 @@ public class LoHangPanel extends JPanel {
 				}
 			}
 		};
-		
+
 		table.getColumnModel().getColumn(3).setCellRenderer(customRenderer); // HSD
 		table.getColumnModel().getColumn(4).setCellRenderer(customRenderer); // Stock
 		table.getColumnModel().getColumn(5).setCellRenderer(customRenderer); // Price
@@ -329,10 +338,16 @@ public class LoHangPanel extends JPanel {
 	private void handleTableSelection() {
 		int row = table.getSelectedRow();
 		if (row >= 0) {
-			int modelRow = table.convertRowIndexToModel(row);
-			if (modelRow >= 0 && modelRow < currentLoHangList.size()) {
-				var lh = currentLoHangList.get(modelRow);
-				fillForm(lh);
+			try {
+				int modelRow = table.convertRowIndexToModel(row);
+				// [Fix CRIT-07] Snapshot guard: validate modelRow against list size
+				java.util.List<LoHang> snapshot = currentLoHangList;
+				if (modelRow >= 0 && modelRow < snapshot.size()) {
+					var lh = snapshot.get(modelRow);
+					fillForm(lh);
+				}
+			} catch (Exception e) {
+				System.err.println("[LoHangPanel] Error selecting row: " + e.getMessage());
 			}
 		}
 	}
@@ -378,12 +393,64 @@ public class LoHangPanel extends JPanel {
 		String trangThai = (String) comboTrangThai.getSelectedItem();
 
 		if (loHangDao.updateTrangThai(maLo, trangThai)) {
+			// [Fix WARN-05] Recalculate product stock after batch status change
+			int modelRow = table.convertRowIndexToModel(table.getSelectedRow());
+			if (modelRow >= 0 && modelRow < currentLoHangList.size()) {
+				int maSanPham = currentLoHangList.get(modelRow).getMaSanPham();
+				sanPhamDao.updateTotalQuantity(maSanPham);
+			}
+
 			JOptionPane.showMessageDialog(this, "Cập nhật trạng thái thành công!", "Thông báo",
 					JOptionPane.INFORMATION_MESSAGE);
 			handleLamMoi();
 			loadData();
 		} else {
 			JOptionPane.showMessageDialog(this, "Cập nhật trạng thái thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void handleXoaLo() {
+		if (txtMaLo.getText().isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Vui lòng chọn lô hàng cần xóa!", "Thông báo",
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		int confirm = JOptionPane.showConfirmDialog(this,
+				"Bạn có chắc chắn muốn xóa lô hàng này?\nThao tác này sẽ làm giảm tổng tồn kho của sản phẩm!",
+				"Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+		if (confirm != JOptionPane.YES_OPTION)
+			return;
+
+		int maLo = Integer.parseInt(txtMaLo.getText());
+
+		// Lấy MaSanPham để update tồn kho sau khi xóa
+		int selectedRow = table.getSelectedRow();
+		if (selectedRow < 0)
+			return;
+		int modelRow = table.convertRowIndexToModel(selectedRow);
+		if (modelRow < 0 || modelRow >= currentLoHangList.size())
+			return;
+		int maSanPham = currentLoHangList.get(modelRow).getMaSanPham();
+
+		if (loHangDao.delete(maLo)) {
+			// [Requirement: SYNC_PRODUCT_QUANTITY]
+			sanPhamDao.updateTotalQuantity(maSanPham);
+
+			JOptionPane.showMessageDialog(this, "Xóa lô hàng thành công!", "Thông báo",
+					JOptionPane.INFORMATION_MESSAGE);
+
+			// Refresh tất cả các panel (Requirement: REFRESH_AFTER_IMPORT)
+			var top = javax.swing.SwingUtilities.getWindowAncestor(this);
+			if (top instanceof app.MainFrame) {
+				((app.MainFrame) top).refreshAllData();
+			} else {
+				handleLamMoi();
+				loadData();
+			}
+		} else {
+			JOptionPane.showMessageDialog(this, "Xóa lô hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

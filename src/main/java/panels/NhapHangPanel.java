@@ -31,8 +31,6 @@ import dao.SanPhamDao;
 import entity.NguoiDung;
 import entity.SanPham;
 import java.awt.Color;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
@@ -51,7 +49,6 @@ public class NhapHangPanel extends JPanel {
 	private JFormattedTextField txtHanSuDung;
 	private JTextField txtGiaNhap;
 	private JTextField txtSoLuong;
-	private JTextField txtThanhTien;
 	
 	private JButton btnTaoPhieuNhap;
 	private JButton btnThemSanPham;
@@ -65,12 +62,14 @@ public class NhapHangPanel extends JPanel {
 	// Thông tin sản phẩm (Product Info)
 	private JComboBox<Object> comboSanPham;
 	private JTextField txtTenSanPham;
-	private JComboBox<String> cbLoaiSPNhap;
 	private JTextField txtDonViTinhNhap;
 	private JTextField txtGiaBanDeXuatNhap;
 	
 	// Labels for visibility control
-	private JLabel lblTenSPMoi, lblLoaiSPNhap, lblDonViTinhNhap, lblGiaBanDeXuatNhap;
+	private JLabel lblTenSPMoi, lblDonViTinhNhap, lblGiaBanDeXuatNhap;
+
+	// Flag to suppress ActionListener events during bulk data loading
+	private boolean isLoadingData = false;
 
 	// Fields required for compilation/consistency (hidden)
 	// private JTextField txtTongSanPham;
@@ -148,14 +147,12 @@ public class NhapHangPanel extends JPanel {
 		// Initialize fields
 		comboSanPham = new JComboBox<>();
 		txtTenSanPham = new JTextField();
-		cbLoaiSPNhap = new JComboBox<>(new String[]{"Thuốc", "DuocMiPham", "ThucPhamChucNang", "ChamSocCaNhan", "ThietBiYTe"});
 		txtDonViTinhNhap = new JTextField("Hộp");
 		txtGiaBanDeXuatNhap = new JTextField();
 		
 		txtSoLo = new JTextField();
 		txtGiaNhap = new JTextField();
 		txtSoLuong = new JTextField();
-		txtThanhTien = new JTextField();
 		comboNhaCungCap = new JComboBox<>();
 		loadNhaCungCapToComboBox();
 
@@ -166,6 +163,7 @@ public class NhapHangPanel extends JPanel {
 		comboSanPham.setBounds(140, y1, fieldWidth, fieldHeight);
 		loadSanPham();
 		comboSanPham.addActionListener(e -> {
+			if (isLoadingData) return; // Suppress events during bulk loading
 			Object selected = comboSanPham.getSelectedItem();
 			if (selected instanceof String && selected.toString().startsWith("[ + ]")) {
 				setProductFieldsState(true); // Open for entry
@@ -173,7 +171,6 @@ public class NhapHangPanel extends JPanel {
 			} else if (selected instanceof entity.SanPham sp) {
 				txtTenSanPham.setText(sp.getTenSanPham());
 				txtDonViTinhNhap.setText(sp.getDonViTinh());
-				cbLoaiSPNhap.setSelectedItem(sp.getLoaiSanPham());
 				txtGiaBanDeXuatNhap.setText(utils.FormatUtils.formatCurrency(sp.getGiaBanDeXuat()));
 				setProductFieldsState(false); // Lock for existing
 				txtSoLo.requestFocusInWindow();
@@ -190,13 +187,6 @@ public class NhapHangPanel extends JPanel {
 		txtTenSanPham.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER, 1));
 		txtTenSanPham.setBounds(140, y1, fieldWidth, fieldHeight);
 		pnlSanPham.add(txtTenSanPham);
-
-		y1 += spacing;
-		lblLoaiSPNhap = new JLabel("Loại sản phẩm:*");
-		lblLoaiSPNhap.setBounds(20, y1, labelWidth, 25);
-		pnlSanPham.add(lblLoaiSPNhap);
-		cbLoaiSPNhap.setBounds(140, y1, fieldWidth, fieldHeight);
-		pnlSanPham.add(cbLoaiSPNhap);
 
 		y1 += spacing;
 		lblDonViTinhNhap = new JLabel("Đơn vị tính:*");
@@ -295,26 +285,6 @@ public class NhapHangPanel extends JPanel {
 		pnlLoHang.add(lblNCC);
 		comboNhaCungCap.setBounds(140, y, fieldWidth, fieldHeight);
 		pnlLoHang.add(comboNhaCungCap);
-
-		y += spacing;
-		var lblThanhTien = new JLabel("Thành tiền:");
-		lblThanhTien.setBounds(20, y, labelWidth, 25);
-		pnlLoHang.add(lblThanhTien);
-		txtThanhTien.setBounds(140, y, fieldWidth, fieldHeight);
-		txtThanhTien.setEditable(false);
-		txtThanhTien.setBackground(ColorScheme.INPUT_DISABLED);
-		txtThanhTien.setForeground(ColorScheme.DANGER);
-		pnlLoHang.add(txtThanhTien);
-
-		DocumentListener calcListener = new DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { calcThanhTien(); }
-			public void removeUpdate(DocumentEvent e) { calcThanhTien(); }
-			public void changedUpdate(DocumentEvent e) { calcThanhTien(); }
-		};
-		txtGiaNhap.getDocument().addDocumentListener(calcListener);
-		txtSoLuong.getDocument().addDocumentListener(calcListener);
-
-
 		
 		wrapperPanel.add(pnlLoHang);
 		wrapperPanel.add(javax.swing.Box.createVerticalStrut(15));
@@ -362,21 +332,6 @@ public class NhapHangPanel extends JPanel {
 		return wrapperOuter;
 	}
 
-	private void calcThanhTien() {
-		try {
-			BigDecimal price = utils.FormatUtils.parseCurrency(txtGiaNhap.getText());
-			String s = txtSoLuong.getText().replaceAll("[^0-9]", "");
-			if (s.isEmpty()) {
-				txtThanhTien.setText("0 VND");
-				return;
-			}
-			int qty = Integer.parseInt(s);
-			txtThanhTien.setText(utils.FormatUtils.formatCurrency(price.multiply(new BigDecimal(qty))));
-		} catch (Exception e) {
-			txtThanhTien.setText("0 VND");
-		}
-	}
-
 	private JPanel createRightPanel() {
 		var panel = new JPanel(new BorderLayout());
 		panel.setBackground(ColorScheme.PANEL_BG);
@@ -420,7 +375,6 @@ public class NhapHangPanel extends JPanel {
 			}
 		};
 		table.getColumnModel().getColumn(5).setCellRenderer(rightRenderer); // Giá nhập
-		table.getColumnModel().getColumn(7).setCellRenderer(rightRenderer); // Thành tiền
 		
 		// Set column widths
 		var columnModel = table.getColumnModel();
@@ -433,7 +387,6 @@ public class NhapHangPanel extends JPanel {
 		columnModel.getColumn(4).setPreferredWidth(100); // Hạn dùng
 		columnModel.getColumn(5).setPreferredWidth(110); // Giá nhập
 		columnModel.getColumn(6).setPreferredWidth(70);  // Số lượng
-		columnModel.getColumn(7).setPreferredWidth(120); // Thành tiền
 		
 		var scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER));
@@ -461,22 +414,32 @@ public class NhapHangPanel extends JPanel {
 
 	private void loadNhaCungCapToComboBox() {
 		System.out.println("[NhapHangPanel] Loading suppliers to ComboBox...");
-		comboNhaCungCap.removeAllItems();
-		comboNhaCungCap.addItem("-- Chọn nhà cung cấp --");
-		List<entity.NhaCungCap> list = nccDao.getAll();
-		System.out.println("[NhapHangPanel] Found " + list.size() + " suppliers.");
-		for (var ncc : list) {
-			comboNhaCungCap.addItem(ncc);
+		isLoadingData = true;
+		try {
+			comboNhaCungCap.removeAllItems();
+			comboNhaCungCap.addItem("-- Chọn nhà cung cấp --");
+			List<entity.NhaCungCap> list = nccDao.getAll();
+			System.out.println("[NhapHangPanel] Found " + list.size() + " suppliers.");
+			for (var ncc : list) {
+				comboNhaCungCap.addItem(ncc);
+			}
+		} finally {
+			isLoadingData = false;
 		}
 	}
 	private void loadSanPham() {
-		comboSanPham.removeAllItems();
-		comboSanPham.addItem("[ + ] Thêm sản phẩm mới");
-		List<SanPham> list = sanPhamDao.getAll();
-		// Ensure list is sorted if DAO didn't
-		list.sort((a,b) -> a.getTenSanPham().compareToIgnoreCase(b.getTenSanPham()));
-		for (SanPham sp : list) {
-			comboSanPham.addItem(sp);
+		isLoadingData = true;
+		try {
+			comboSanPham.removeAllItems();
+			comboSanPham.addItem("[ + ] Thêm sản phẩm mới");
+			List<SanPham> list = sanPhamDao.getAll();
+			// Ensure list is sorted if DAO didn't
+			list.sort((a,b) -> a.getTenSanPham().compareToIgnoreCase(b.getTenSanPham()));
+			for (SanPham sp : list) {
+				comboSanPham.addItem(sp);
+			}
+		} finally {
+			isLoadingData = false;
 		}
 	}
 
@@ -540,31 +503,41 @@ public class NhapHangPanel extends JPanel {
 		String donViNhap = txtDonViTinhNhap.getText().trim();
 		if (donViNhap.isEmpty()) donViNhap = "Hộp";
 
-		BigDecimal thanhTien = giaNhap.multiply(new BigDecimal(soLuong));
 
 		// Nếu là SP mới (không tìm thấy) -> Insert SP vào DB trước
 		int maSPFinal = sp != null ? sp.getMaSanPham() : 0;
 		String tenSPFinal = tenSPNhap;
 		if (maSPFinal == 0) {
-			String donViTinhMoi = txtDonViTinhNhap.getText().trim();
-			if (donViTinhMoi.isEmpty()) donViTinhMoi = "Hộp";
-			
-			BigDecimal giaBanDeXuat = utils.FormatUtils.parseCurrency(txtGiaBanDeXuatNhap.getText());
-			
-			SanPham spMoi = new SanPham();
-			spMoi.setTenSanPham(tenSPFinal);
-			spMoi.setLoaiSanPham("thuoc");
-			spMoi.setDonViTinh(donViTinhMoi);
-			spMoi.setGiaBanDeXuat(giaBanDeXuat);
-			spMoi.setMoTa("");
-			spMoi.setMucTonToiThieu(10);
-			
-			int newId = sanPhamDao.insertAndGetId(spMoi);
-			if (newId <= 0) {
-				JOptionPane.showMessageDialog(this, "Không thể tạo sản phẩm mới! Kiểm tra lại kết nối DB.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-				return;
+			// [Requirement: FIX_SOFT_DELETE_RESURRECTION] Kiểm tra sản phẩm cũ (kể cả đã xóa)
+			SanPham existing = sanPhamDao.findByNameIncludingDeleted(tenSPFinal);
+			if (existing != null) {
+				if (existing.isDaXoa()) {
+					sanPhamDao.resurrect(existing.getMaSanPham());
+					System.out.println("[NhapHangPanel] Resurrected product: " + tenSPFinal);
+				}
+				maSPFinal = existing.getMaSanPham();
+				sp = existing; // Cập nhật sp để có đủ info
+			} else {
+				// Tạo mới hoàn toàn
+				String donViTinhMoi = txtDonViTinhNhap.getText().trim();
+				if (donViTinhMoi.isEmpty()) donViTinhMoi = "Hộp";
+				
+				BigDecimal giaBanDeXuat = utils.FormatUtils.parseCurrency(txtGiaBanDeXuatNhap.getText());
+				
+				SanPham spMoi = new SanPham();
+				spMoi.setTenSanPham(tenSPFinal);
+				spMoi.setDonViTinh(donViTinhMoi);
+				spMoi.setGiaBanDeXuat(giaBanDeXuat);
+				spMoi.setMoTa("");
+				spMoi.setMucTonToiThieu(10);
+				
+				int newId = sanPhamDao.insertAndGetId(spMoi);
+				if (newId <= 0) {
+					JOptionPane.showMessageDialog(this, "Không thể tạo sản phẩm mới! Kiểm tra lại kết nối DB.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				maSPFinal = newId;
 			}
-			maSPFinal = newId;
 			loadSanPham(); // Reload list
 		}
 
@@ -576,7 +549,6 @@ public class NhapHangPanel extends JPanel {
 			hanSuDung,
 			giaNhap,
 			soLuong,
-			thanhTien,
 			donViNhap,
 			"Bán lẻ" // Default since radio is gone
 		};
@@ -605,8 +577,9 @@ public class NhapHangPanel extends JPanel {
 	private void updateTongTien() {
 		java.math.BigDecimal total = java.math.BigDecimal.ZERO;
 		for (int i = 0; i < tableModel.getRowCount(); i++) {
-			java.math.BigDecimal thanhTien = (java.math.BigDecimal) tableModel.getValueAt(i, 7);
-			total = total.add(thanhTien);
+			java.math.BigDecimal giaNhap = (java.math.BigDecimal) tableModel.getValueAt(i, 5);
+			int soLuong = ((Number) tableModel.getValueAt(i, 6)).intValue();
+			total = total.add(giaNhap.multiply(new java.math.BigDecimal(soLuong)));
 		}
 		lblTongTien.setText(utils.FormatUtils.formatCurrency(total));
 	}
@@ -631,8 +604,8 @@ public class NhapHangPanel extends JPanel {
 			java.time.LocalDate hanSuDung = (java.time.LocalDate) tableModel.getValueAt(i, 4);
 			java.math.BigDecimal giaNhap = (java.math.BigDecimal) tableModel.getValueAt(i, 5);
 			int soLuong = ((Number) tableModel.getValueAt(i, 6)).intValue();
-			String donViNhap = (String) tableModel.getValueAt(i, 8);
-			String loaiHinhBan = (String) tableModel.getValueAt(i, 9);
+			String donViNhap = (String) tableModel.getValueAt(i, 7);
+			String loaiHinhBan = (String) tableModel.getValueAt(i, 8);
 			
 			// [Requirement: SMART_ACCUMULATION_LOGIC] Tự động cộng dồn nếu trùng bộ ba (MaSP, SoLo, HSD)
 			entity.LoHang existing = loHangDao.findByMaSPSoLoHSD(maSanPham, soLo, hanSuDung);
@@ -658,10 +631,15 @@ public class NhapHangPanel extends JPanel {
 		if (maPN != null && maPN > 0) {
 			System.out.println("[NhapHangPanel] Giao dịch lưu Phiếu Nhập Hàng thành công!");
 			JOptionPane.showMessageDialog(this,
-					"Tạo Phiếu Nhập Hàng #" + maPN + " thành công!\n"
+					"Tạo Phiếu Nhập Hàng thành công!\n"
 					+ tableModel.getRowCount() + " sản phẩm đã được tự động nhập Lô hàng.",
 					"Thành công", JOptionPane.INFORMATION_MESSAGE);
 			
+			// [Requirement: SYNC_PRODUCT_QUANTITY] Cập nhật tổng tồn cho từng SP vừa nhập
+			for (entity.ChiTietPhieuNhap item : chiTietList) {
+				sanPhamDao.updateTotalQuantity(item.getMaSanPham());
+			}
+
 			// Auto refresh data across panels (Requirement: AUTO_REFRESH_DATA_AFTER_IMPORT)
 			var top = javax.swing.SwingUtilities.getWindowAncestor(this);
 			if (top instanceof app.MainFrame) {
@@ -681,7 +659,6 @@ public class NhapHangPanel extends JPanel {
 		txtHanSuDung.setText("");
 		txtGiaNhap.setText("");
 		txtSoLuong.setText("");
-		txtThanhTien.setText("0 VND");
 		
 		if (txtTenSanPham != null) {
 			txtTenSanPham.setText(""); txtTenSanPham.setVisible(false);
@@ -689,7 +666,6 @@ public class NhapHangPanel extends JPanel {
 		if (comboSanPham != null && comboSanPham.getItemCount() > 0) {
 			comboSanPham.setSelectedIndex(0);
 		}
-		if (cbLoaiSPNhap != null) cbLoaiSPNhap.setSelectedIndex(0);
 		if (txtDonViTinhNhap != null) txtDonViTinhNhap.setText("Hộp");
 		if (txtGiaBanDeXuatNhap != null) txtGiaBanDeXuatNhap.setText("");
 	}
@@ -699,21 +675,17 @@ public class NhapHangPanel extends JPanel {
 		txtTenSanPham.setVisible(isNew);
 		
 		// Always visible, but editable state changes
-		lblLoaiSPNhap.setVisible(true);
-		cbLoaiSPNhap.setVisible(true);
 		lblDonViTinhNhap.setVisible(true);
 		txtDonViTinhNhap.setVisible(true);
 		lblGiaBanDeXuatNhap.setVisible(true);
 		txtGiaBanDeXuatNhap.setVisible(true);
 		
-		cbLoaiSPNhap.setEnabled(isNew);
 		txtDonViTinhNhap.setEditable(isNew);
 		txtGiaBanDeXuatNhap.setEditable(isNew);
 		
 		if (isNew) {
 			txtTenSanPham.setText("");
 			txtDonViTinhNhap.setText("Hộp");
-			cbLoaiSPNhap.setSelectedIndex(0);
 			txtGiaBanDeXuatNhap.setText("");
 		}
 	}
@@ -751,7 +723,6 @@ public class NhapHangPanel extends JPanel {
 					try { field.setCaretPosition(newPos); } catch (Exception ignored) {}
 					
 					isUpdating = false;
-					if (field == txtGiaNhap) calcThanhTien();
 				});
 			}
 		});

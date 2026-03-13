@@ -1,8 +1,6 @@
 package dao;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +21,14 @@ public class SanPhamDao {
 	 */
 	public List<SanPham> getAll() {
 		List<SanPham> list = new ArrayList<>();
+		String sql = "SELECT sp.*, "
+				+ "(SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham AND lh.TrangThai <> N'Ngưng bán') as TongTon, "
+				+ "(SELECT MIN(HanSuDung) FROM LoHang lh2 WHERE lh2.MaSanPham = sp.MaSanPham AND lh2.SoLuongTon > 0 AND lh2.TrangThai <> N'Ngưng bán') as HanSuDungGanNhat "
+				+ "FROM SanPham sp WHERE sp.TrangThai = 1 ORDER BY sp.TenSanPham";
 		try (
 				var con = ConnectDB.getCon();
 				var stmt = con.createStatement();
-				var rs = stmt.executeQuery(
-						"SELECT * FROM SanPham WHERE DaXoa = 0 ORDER BY TenSanPham");) {
+				var rs = stmt.executeQuery(sql);) {
 			while (rs.next()) {
 				list.add(mapResultSet(rs));
 			}
@@ -41,7 +42,7 @@ public class SanPhamDao {
 	 * Lấy sản phẩm theo trang (overload đơn giản)
 	 */
 	public PageResult<SanPham> getByPage(int page, int size) {
-		return getByPage(page, size, null, "MaSanPham", "ASC", "Tất cả", "Tất cả loại");
+		return getByPage(page, size, null, "MaSanPham", "ASC", "Tất cả", "Tất cả ĐVT");
 	}
 
 	/**
@@ -56,38 +57,48 @@ public class SanPhamDao {
 	 * @return PageResult chứa danh sách sản phẩm + metadata phân trang
 	 */
 	public PageResult<SanPham> getByPage(int page, int size, String keyword,
-			String sortColumn, String sortOrder, String loaiHinhBan, String loaiSP) {
+			String sortColumn, String sortOrder, String loaiHinhBan, String dvt) {
 		List<SanPham> list = new ArrayList<>();
 		int totalRows = 0;
 		int totalPages = 0;
 
-		String whereClause = "WHERE sp.DaXoa = 0 ";
+		String whereClause = "WHERE sp.TrangThai = 1 ";
 		if (keyword != null && !keyword.trim().isEmpty()) {
 			whereClause += " AND sp.TenSanPham LIKE ? ";
 		}
 		if (loaiHinhBan != null && !loaiHinhBan.trim().isEmpty() && !loaiHinhBan.equals("Tất cả")) {
 			whereClause += " AND EXISTS (SELECT 1 FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham AND lh.LoaiHinhBan = ? AND lh.SoLuongTon > 0) ";
 		}
-		if (loaiSP != null && !loaiSP.trim().isEmpty() && !loaiSP.equals("Tất cả loại")) {
-			whereClause += " AND sp.LoaiSanPham = ? ";
+		if (dvt != null && !dvt.trim().isEmpty() && !dvt.equals("Tất cả ĐVT")) {
+			whereClause += " AND sp.DonViTinh = ? ";
 		}
 
 		String countQuery = "SELECT COUNT(*) FROM SanPham sp " + whereClause;
 
 		String sortExp = "sp.MaSanPham";
-		if ("TenSanPham".equals(sortColumn)) sortExp = "sp.TenSanPham";
-		else if ("GiaBanDeXuat".equals(sortColumn)) sortExp = "sp.GiaBanDeXuat";
-		else if ("MoTa".equals(sortColumn)) sortExp = "sp.MoTa";
-		else if ("DonViTinh".equals(sortColumn)) sortExp = "sp.DonViTinh";
-		else if ("LoaiSanPham".equals(sortColumn)) sortExp = "sp.LoaiSanPham";
-		else if ("MucTonToiThieu".equals(sortColumn)) sortExp = "sp.MucTonToiThieu";
+		if ("TenSanPham".equals(sortColumn))
+			sortExp = "sp.TenSanPham";
+		else if ("GiaBanDeXuat".equals(sortColumn))
+			sortExp = "sp.GiaBanDeXuat";
+		else if ("MoTa".equals(sortColumn))
+			sortExp = "sp.MoTa";
+		else if ("DonViTinh".equals(sortColumn))
+			sortExp = "sp.DonViTinh";
+		else if ("MucTonToiThieu".equals(sortColumn))
+			sortExp = "sp.MucTonToiThieu";
+		else if ("TongTon".equals(sortColumn))
+			sortExp = "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham AND tk.TrangThai <> N'Ngưng bán'), 0)";
+		else if ("HanSuDungGanNhat".equals(sortColumn))
+			sortExp = "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0 AND tk2.TrangThai <> N'Ngưng bán')";
 
-		String sql = "SELECT sp.*, "
-				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham), 0) AS TongTon, "
-				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0) AS HanSuDungGanNhat "
+		String sql = "SELECT sp.MaSanPham, sp.TenSanPham, sp.GiaBanDeXuat, sp.DonViTinh, "
+				+ "sp.MoTa, sp.MucTonToiThieu, "
+				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham AND tk.TrangThai <> N'Ngưng bán'), 0) AS TongTon, "
+				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0 AND tk2.TrangThai <> N'Ngưng bán') AS HanSuDungGanNhat "
 				+ " FROM SanPham sp "
 				+ whereClause
-				+ " ORDER BY " + sortExp + " " + (sortOrder != null && sortOrder.equalsIgnoreCase("DESC") ? "DESC" : "ASC")
+				+ " ORDER BY " + sortExp + " "
+				+ (sortOrder != null && sortOrder.equalsIgnoreCase("DESC") ? "DESC" : "ASC")
 				+ " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
 		try (var con = ConnectDB.getCon()) {
@@ -100,11 +111,12 @@ public class SanPhamDao {
 				if (loaiHinhBan != null && !loaiHinhBan.trim().isEmpty() && !loaiHinhBan.equals("Tất cả")) {
 					psCount.setString(paramIndex++, loaiHinhBan);
 				}
-				if (loaiSP != null && !loaiSP.trim().isEmpty() && !loaiSP.equals("Tất cả loại")) {
-					psCount.setString(paramIndex++, loaiSP);
+				if (dvt != null && !dvt.trim().isEmpty() && !dvt.equals("Tất cả ĐVT")) {
+					psCount.setString(paramIndex++, dvt);
 				}
 				var rsCount = psCount.executeQuery();
-				if (rsCount.next()) totalRows = rsCount.getInt(1);
+				if (rsCount.next())
+					totalRows = rsCount.getInt(1);
 			}
 
 			// Fetch items
@@ -116,8 +128,8 @@ public class SanPhamDao {
 				if (loaiHinhBan != null && !loaiHinhBan.trim().isEmpty() && !loaiHinhBan.equals("Tất cả")) {
 					ps.setString(paramIndex++, loaiHinhBan);
 				}
-				if (loaiSP != null && !loaiSP.trim().isEmpty() && !loaiSP.equals("Tất cả loại")) {
-					ps.setString(paramIndex++, loaiSP);
+				if (dvt != null && !dvt.trim().isEmpty() && !dvt.equals("Tất cả ĐVT")) {
+					ps.setString(paramIndex++, dvt);
 				}
 				ps.setInt(paramIndex++, (page - 1) * size);
 				ps.setInt(paramIndex++, size);
@@ -129,10 +141,9 @@ public class SanPhamDao {
 					sp.setTenSanPham(rs.getString("TenSanPham"));
 					sp.setDonViTinh(rs.getString("DonViTinh"));
 					sp.setGiaBanDeXuat(rs.getBigDecimal("GiaBanDeXuat"));
-					sp.setLoaiSanPham(rs.getString("LoaiSanPham"));
 					sp.setMoTa(rs.getString("MoTa"));
 					sp.setMucTonToiThieu(rs.getInt("MucTonToiThieu"));
-					sp.setTongTon(rs.getInt("TongTon")); 
+					sp.setTongTon(rs.getInt("TongTon"));
 					if (rs.getDate("HanSuDungGanNhat") != null) {
 						sp.setHanSuDungGanNhat(rs.getDate("HanSuDungGanNhat").toLocalDate());
 					}
@@ -140,7 +151,8 @@ public class SanPhamDao {
 				}
 			}
 			totalPages = (int) Math.ceil((double) totalRows / size);
-			if (totalPages == 0) totalPages = 1;
+			if (totalPages == 0)
+				totalPages = 1;
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -155,13 +167,14 @@ public class SanPhamDao {
 	public SanPham findById(int maSanPham) {
 		try (
 				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE MaSanPham = ? AND DaXoa = 0");) {
+				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE MaSanPham = ? AND TrangThai = 1");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			if (rs.next()) {
 				var sp = mapResultSet(rs);
 				// Lấy thêm tổng tồn do hàm findById select thẳng từ SanPham không qua view
-				try (var psTon = con.prepareStatement("SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang WHERE MaSanPham = ?")) {
+				try (var psTon = con
+						.prepareStatement("SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang WHERE MaSanPham = ?")) {
 					psTon.setInt(1, maSanPham);
 					var rsTon = psTon.executeQuery();
 					if (rsTon.next()) {
@@ -180,11 +193,11 @@ public class SanPhamDao {
 	 * Lấy thông tin chi tiết đầy đủ mở rộng (Dùng cho xem chi tiết)
 	 */
 	public SanPham getFullDetailByMaSP(int maSanPham) {
-		String sql = "SELECT sp.*, ISNULL(tk.TongTon, 0) AS TongTon, "
-				+ "(SELECT MIN(HanSuDung) FROM LoHang lh WHERE lh.MaSanPham = sp.MaSanPham AND lh.SoLuongTon > 0) AS HanSuDungGanNhat "
+		String sql = "SELECT sp.*, "
+				+ "ISNULL((SELECT SUM(SoLuongTon) FROM LoHang tk WHERE tk.MaSanPham = sp.MaSanPham), 0) AS TongTon, "
+				+ "(SELECT MIN(HanSuDung) FROM LoHang tk2 WHERE tk2.MaSanPham = sp.MaSanPham AND tk2.SoLuongTon > 0) AS HanSuDungGanNhat "
 				+ "FROM SanPham sp "
-				+ "LEFT JOIN v_TonKhoSanPham tk ON sp.MaSanPham = tk.MaSanPham "
-				+ "WHERE sp.MaSanPham = ?";
+				+ "WHERE sp.MaSanPham = ? AND sp.TrangThai = 1";
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(sql)) {
@@ -207,7 +220,7 @@ public class SanPhamDao {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"SELECT * FROM SanPham WHERE DaXoa = 0 AND TenSanPham LIKE ? ORDER BY TenSanPham ASC");) {
+						"SELECT * FROM SanPham WHERE TrangThai = 1 AND TenSanPham LIKE ? ORDER BY TenSanPham ASC");) {
 			ps.setString(1, "%" + keyword + "%");
 			var rs = ps.executeQuery();
 			while (rs.next()) {
@@ -225,7 +238,8 @@ public class SanPhamDao {
 	public SanPham findByNameExact(String exactName) {
 		try (
 				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE DaXoa = 0 AND TenSanPham = ? ORDER BY TenSanPham ASC")) {
+				var ps = con.prepareStatement(
+						"SELECT * FROM SanPham WHERE TrangThai = 1 AND TenSanPham = ? ORDER BY TenSanPham ASC")) {
 			ps.setNString(1, exactName);
 			var rs = ps.executeQuery();
 			if (rs.next()) {
@@ -238,18 +252,51 @@ public class SanPhamDao {
 	}
 
 	/**
+	 * Tìm sản phẩm theo tên chính xác (kể cả đã xóa) - Dùng để Phục hồi
+	 */
+	public SanPham findByNameIncludingDeleted(String exactName) {
+		try (
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE TenSanPham = ?")) {
+			ps.setNString(1, exactName);
+			var rs = ps.executeQuery();
+			if (rs.next()) {
+				return mapResultSet(rs);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Phục hồi sản phẩm đã xóa
+	 */
+	public boolean resurrect(int maSanPham) {
+		try (var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("UPDATE SanPham SET TrangThai = 1, DaXoa = 0 WHERE MaSanPham = ?")) {
+			ps.setInt(1, maSanPham);
+			return ps.executeUpdate() > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	/**
 	 * Thêm sản phẩm mới
 	 */
 	public boolean insert(SanPham sp) {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"INSERT INTO SanPham(TenSanPham, LoaiSanPham, DonViTinh, GiaBanDeXuat) " +
-								"VALUES (?, ?, ?, ?)");) {
+						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu, LoaiSanPham) " +
+								"VALUES (?, ?, ?, ?, ?, N'Khác')");) {
 			ps.setNString(1, sp.getTenSanPham());
-			ps.setNString(2, "thuoc"); // Luôn lưu là 'thuoc' không dấu
-			ps.setNString(3, sp.getDonViTinh());
-			ps.setBigDecimal(4, sp.getGiaBanDeXuat());
+			ps.setNString(2, sp.getDonViTinh());
+			ps.setBigDecimal(3, sp.getGiaBanDeXuat());
+			ps.setNString(4, sp.getMoTa());
+			ps.setInt(5, sp.getMucTonToiThieu());
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -265,13 +312,14 @@ public class SanPhamDao {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"INSERT INTO SanPham(TenSanPham, LoaiSanPham, DonViTinh, GiaBanDeXuat) " +
-								"VALUES (?, ?, ?, ?)",
+						"INSERT INTO SanPham(TenSanPham, DonViTinh, GiaBanDeXuat, MoTa, MucTonToiThieu, LoaiSanPham) " +
+								"VALUES (?, ?, ?, ?, ?, N'Khác')",
 						java.sql.Statement.RETURN_GENERATED_KEYS);) {
 			ps.setNString(1, sp.getTenSanPham());
-			ps.setNString(2, "thuoc"); // Luôn lưu là 'thuoc' không dấu
-			ps.setNString(3, sp.getDonViTinh());
-			ps.setBigDecimal(4, sp.getGiaBanDeXuat());
+			ps.setNString(2, sp.getDonViTinh());
+			ps.setBigDecimal(3, sp.getGiaBanDeXuat());
+			ps.setNString(4, sp.getMoTa());
+			ps.setInt(5, sp.getMucTonToiThieu());
 			ps.executeUpdate();
 			var rs = ps.getGeneratedKeys();
 			if (rs.next()) {
@@ -287,18 +335,37 @@ public class SanPhamDao {
 	 * Cập nhật sản phẩm
 	 */
 	public boolean update(SanPham sp) {
-		try (
-				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement(
-						"UPDATE SanPham SET TenSanPham=?, DonViTinh=?, GiaBanDeXuat=?, " +
-								"LoaiSanPham=?, MoTa=?, MucTonToiThieu=? WHERE MaSanPham=?");) {
-			ps.setNString(1, sp.getTenSanPham());
-			ps.setNString(2, sp.getDonViTinh());
-			ps.setBigDecimal(3, sp.getGiaBanDeXuat());
-			ps.setNString(4, "thuoc"); // Luôn lưu là 'thuoc' không dấu
-			ps.setNString(5, sp.getMoTa());
-			ps.setInt(6, sp.getMucTonToiThieu());
-			ps.setInt(7, sp.getMaSanPham());
+		String sql = "UPDATE SanPham SET TenSanPham=?, GiaBanDeXuat=?, DonViTinh=?, " +
+				"MoTa=?, MucTonToiThieu=? WHERE MaSanPham=?";
+		try (var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(sql);) {
+			ps.setString(1, sp.getTenSanPham());
+			ps.setBigDecimal(2, sp.getGiaBanDeXuat());
+			ps.setString(3, sp.getDonViTinh());
+			ps.setString(4, sp.getMoTa());
+			ps.setInt(5, sp.getMucTonToiThieu());
+			ps.setInt(6, sp.getMaSanPham());
+			return ps.executeUpdate() > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	/**
+	 * [Requirement: SYNC_PRODUCT_QUANTITY]
+	 * Tính lại tổng tồn kho của 1 sản phẩm từ bảng LoHang và cập nhập vào bảng
+	 * SanPham
+	 */
+	public boolean updateTotalQuantity(int maSanPham) {
+		String sql = "UPDATE SanPham SET SoLuongTon = (" +
+				"SELECT ISNULL(SUM(SoLuongTon), 0) FROM LoHang " +
+				"WHERE MaSanPham = ? AND TrangThai <> N'Ngưng bán'" +
+				") WHERE MaSanPham = ?";
+		try (var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(sql)) {
+			ps.setInt(1, maSanPham);
+			ps.setInt(2, maSanPham);
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -312,13 +379,32 @@ public class SanPhamDao {
 	public boolean delete(int maSanPham) {
 		try (
 				var con = ConnectDB.getCon();
-				var ps = con.prepareStatement("UPDATE SanPham SET DaXoa=1 WHERE MaSanPham=?");) {
+				var ps = con.prepareStatement("UPDATE SanPham SET TrangThai = 0, DaXoa = 1 WHERE MaSanPham = ?");) {
 			ps.setInt(1, maSanPham);
 			return ps.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	/**
+	 * Lấy danh sách các đơn vị tính duy nhất
+	 */
+	public List<String> getDistinctUnits() {
+		List<String> list = new ArrayList<>();
+		try (
+				var con = ConnectDB.getCon();
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery(
+						"SELECT DISTINCT DonViTinh FROM SanPham WHERE TrangThai = 1 AND DonViTinh IS NOT NULL AND DonViTinh <> '' ORDER BY DonViTinh");) {
+			while (rs.next()) {
+				list.add(rs.getString(1));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
 	}
 
 	/**
@@ -330,7 +416,6 @@ public class SanPhamDao {
 		sp.setTenSanPham(rs.getString("TenSanPham"));
 		sp.setDonViTinh(rs.getString("DonViTinh"));
 		sp.setGiaBanDeXuat(rs.getBigDecimal("GiaBanDeXuat"));
-		sp.setLoaiSanPham(rs.getString("LoaiSanPham"));
 		sp.setMoTa(rs.getString("MoTa"));
 		sp.setMucTonToiThieu(rs.getInt("MucTonToiThieu"));
 
@@ -338,18 +423,27 @@ public class SanPhamDao {
 		if (rs.getTimestamp("NgayTao") != null) {
 			sp.setNgayTao(rs.getTimestamp("NgayTao").toLocalDateTime());
 		}
-		
+
 		// Map thêm các trường ảo (nếu có trong câu query)
 		try {
 			sp.setTongTon(rs.getInt("TongTon"));
-		} catch (Exception ignore) {}
+		} catch (Exception ignore) {
+		}
 
+		// Try both alias names for HSD column
 		try {
-			if (rs.getDate("HanSuDungGanNhat") != null) {
-				sp.setHanSuDungGanNhat(rs.getDate("HanSuDungGanNhat").toLocalDate());
+			java.sql.Date hsd = rs.getDate("HanSuDungGanNhat");
+			if (hsd != null)
+				sp.setHanSuDungGanNhat(hsd.toLocalDate());
+		} catch (Exception e1) {
+			try {
+				java.sql.Date hsd = rs.getDate("HanSDGanNhat");
+				if (hsd != null)
+					sp.setHanSuDungGanNhat(hsd.toLocalDate());
+			} catch (Exception ignore) {
 			}
-		} catch (Exception ignore) {}
-		
+		}
+
 		return sp;
 	}
 }
