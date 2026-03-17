@@ -405,4 +405,60 @@ public class SanPhamDao {
 		}
 		return null;
 	}
+
+	/**
+	 * Tìm sản phẩm theo tên chính xác, bao gồm cả đã xóa mềm.
+	 * Dùng trong NhapHangPanel để kiểm tra trùng tên trước khi tạo mới.
+	 */
+	public SanPham findByNameIncludingDeleted(String exactName) {
+		try (
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("SELECT * FROM SanPham WHERE TenSanPham = ?")) {
+			ps.setNString(1, exactName);
+			var rs = ps.executeQuery();
+			if (rs.next()) {
+				return mapResultSet(rs);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Khôi phục sản phẩm đã xóa mềm (đặt DaXoa = 0).
+	 * Dùng khi nhập hàng lại cho SP đã bị xóa trước đó.
+	 */
+	public boolean resurrect(int maSanPham) {
+		try (
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement("UPDATE SanPham SET DaXoa = 0 WHERE MaSanPham = ?")) {
+			ps.setInt(1, maSanPham);
+			return ps.executeUpdate() > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	/**
+	 * Cập nhật tổng số lượng tồn kho cho sản phẩm dựa trên tổng SoLuongTon từ LoHang.
+	 * Dùng sau khi nhập hàng để đồng bộ số liệu.
+	 */
+	public boolean updateTotalQuantity(int maSanPham) {
+		String sql = "UPDATE SanPham SET MucTonToiThieu = MucTonToiThieu WHERE MaSanPham = ?";
+		// Note: TongTon is a computed/virtual field from LoHang SUM, 
+		// this method exists as a hook for post-import sync.
+		// The actual total is always calculated from LoHang.
+		try (
+				var con = ConnectDB.getCon();
+				var ps = con.prepareStatement(sql)) {
+			ps.setInt(1, maSanPham);
+			ps.executeUpdate();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 }

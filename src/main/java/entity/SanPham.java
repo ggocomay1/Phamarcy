@@ -14,6 +14,7 @@ public class SanPham {
 	private BigDecimal giaBanDeXuat;
 	private String moTa;
 	private String barcode;
+	private String loaiSanPham;
 	private int mucTonToiThieu;
 
 	// View/Transient properties liên kết từ LoHang
@@ -71,6 +72,9 @@ public class SanPham {
 
 	public String getLoaiHinhBan() { return loaiHinhBan; }
 	public void setLoaiHinhBan(String loaiHinhBan) { this.loaiHinhBan = loaiHinhBan; }
+
+	public String getLoaiSanPham() { return loaiSanPham; }
+	public void setLoaiSanPham(String loaiSanPham) { this.loaiSanPham = loaiSanPham; }
 
 	public boolean isDaXoa() { return daXoa; }
 	public void setDaXoa(boolean daXoa) { this.daXoa = daXoa; }
