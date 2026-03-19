@@ -26,7 +26,7 @@ public class LoHangDao {
 				var rs = stmt.executeQuery(
 						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
 								"FROM LoHang lh " +
-								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.DaXoa = 0 " +
 								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
 								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
 								"WHERE lh.TrangThai <> N'Ngưng bán' " +
@@ -50,7 +50,7 @@ public class LoHangDao {
 				var ps = con.prepareStatement(
 						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
 								"FROM LoHang lh " +
-								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.DaXoa = 0 " +
 								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
 								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
 								"WHERE lh.MaSanPham = ? AND lh.TrangThai <> N'Ngưng bán' " +
@@ -74,14 +74,18 @@ public class LoHangDao {
 		try (
 				var con = ConnectDB.getCon();
 				var ps = con.prepareStatement(
-						"SELECT * FROM LoHang " +
-								"WHERE MaSanPham = ? " +
-								"AND SoLuongTon > 0 AND TrangThai <> N'Ngưng bán' " +
-								"ORDER BY HanSuDung ASC");) {
+						"SELECT lh.*, ncc.TenNCC " +
+								"FROM LoHang lh " +
+								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
+								"WHERE lh.MaSanPham = ? " +
+								"AND lh.SoLuongTon > 0 AND lh.TrangThai <> N'Ngưng bán' " +
+								"ORDER BY lh.HanSuDung ASC");) {
 			ps.setInt(1, maSanPham);
 			var rs = ps.executeQuery();
 			while (rs.next()) {
-				list.add(mapResultSet(rs));
+				var lh = mapResultSet(rs);
+				try { lh.setTenNhaCungCap(rs.getString("TenNCC")); } catch (Exception ignore) {}
+				list.add(lh);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -123,7 +127,7 @@ public class LoHangDao {
 				var ps = con.prepareStatement(
 						"SELECT lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
 								"FROM LoHang lh " +
-								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.DaXoa = 0 " +
 								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
 								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
 								"WHERE lh.MaLoHang = ? AND lh.TrangThai <> N'Ngưng bán'");) {
@@ -147,7 +151,7 @@ public class LoHangDao {
 				var ps = con.prepareStatement(
 						"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
 								"FROM LoHang lh " +
-								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.DaXoa = 0 " +
 								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
 								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
 								"WHERE lh.MaSanPham = ? AND lh.SoLo = ? AND lh.TrangThai <> N'Ngưng bán' " +
@@ -174,7 +178,7 @@ public class LoHangDao {
 				var ps = con.prepareStatement(
 						"SELECT TOP 1 lh.*, sp.TenSanPham, ncc.TenNCC, pn.NgayNhap as NgayNhapPN " +
 								"FROM LoHang lh " +
-								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.TrangThai = 1 " +
+								"JOIN SanPham sp ON lh.MaSanPham = sp.MaSanPham AND sp.DaXoa = 0 " +
 								"LEFT JOIN PhieuNhap pn ON lh.MaPhieuNhap = pn.MaPhieuNhap " +
 								"LEFT JOIN NhaCungCap ncc ON lh.MaNCC = ncc.MaNCC " +
 								"WHERE lh.MaSanPham = ? AND lh.SoLo = ? AND lh.HanSuDung = ? AND lh.TrangThai <> N'Ngưng bán'");) {

@@ -37,3 +37,9 @@
 [02:39:19.248] WARNING BanHangService - [CART] Thêm SP thất bại: HD=103 SP=155 SL=1
 [02:39:20.987] WARNING BanHangService - [CART] Thêm SP thất bại: HD=103 SP=175 SL=1
 [02:39:28.374] INFO ConnectDB - Connection pool closed
+[20:22:56.241] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[20:22:56.317] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quáº£n trá»‹ há»‡ thá»‘ng)
+[20:26:02.068] INFO ConnectDB - Connection pool closed
+[20:28:11.544] INFO ConnectDB - ✓ Kết nối DB thành công: jdbc:sqlserver://localhost:1433;databaseName=CuaHangThuoc_Ba...
+[20:28:11.609] INFO LoginFrame - [LOGIN] Thành công: user=admin (Quáº£n trá»‹ há»‡ thá»‘ng)
+[20:51:51.674] INFO ConnectDB - Connection pool closed

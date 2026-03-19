@@ -40,7 +40,7 @@ public class ProductDetailDialog extends JDialog {
 
 	public ProductDetailDialog(SanPham sp, java.awt.Window owner) {
 		super(owner, "Chi tiết Sản phẩm (Profile)", ModalityType.APPLICATION_MODAL);
-		setSize(800, 650);
+		setSize(1000, 720);
 		setLocationRelativeTo(owner);
 		setLayout(new BorderLayout());
 		getContentPane().setBackground(ColorScheme.BACKGROUND);
@@ -79,6 +79,7 @@ public class ProductDetailDialog extends JDialog {
 		addGridField(leftPanel, "Tên sản phẩm:", sp.getTenSanPham(), 1, true, ColorScheme.PRIMARY);
 		addGridField(leftPanel, "Đơn vị tính:", sp.getDonViTinh(), 2, false, null);
 		addGridField(leftPanel, "Giá bán đề xuất:", sp.getGiaBanDeXuat() != null ? df.format(sp.getGiaBanDeXuat()) : "0 VND", 3, true, new Color(25, 135, 84));
+		addGridField(leftPanel, "Nhóm sản phẩm:", loaiSPLabel(sp.getLoaiSanPham()), 4, true, new Color(124, 58, 237));
 		
 		gbc.gridx = 0; gbc.gridy = 0;
 		contentPanel.add(leftPanel, gbc);
@@ -127,11 +128,11 @@ public class ProductDetailDialog extends JDialog {
 		batchPanel.setBackground(ColorScheme.PANEL_BG);
 		batchPanel.setBorder(BorderFactory.createTitledBorder(
 			BorderFactory.createLineBorder(ColorScheme.BORDER), 
-			"Bảng chi tiết lô hàng đang tồn", TitledBorder.LEFT, TitledBorder.TOP,
-			new Font("Segoe UI", Font.BOLD, 15), ColorScheme.TEXT_PRIMARY
+			"Chi tiết lô hàng (Số lô · Nhà cung cấp · Ngày nhập · Số lượng · Giá nhập · Hạn SD · Trạng thái)", TitledBorder.LEFT, TitledBorder.TOP,
+			new Font("Segoe UI", Font.BOLD, 14), ColorScheme.TEXT_PRIMARY
 		));
 		
-		String[] columnNames = {"Số lô", "Hạn sử dụng", "Số lượng tồn", "Sỉ/Lẻ", "Trạng thái"};
+		String[] columnNames = {"Số lô", "Nhà cung cấp", "Ngày nhập", "SL nhập", "SL tồn", "Giá nhập", "Hạn sử dụng", "Sỉ/Lẻ", "Trạng thái"};
 		tableModel = new DefaultTableModel(columnNames, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
@@ -139,9 +140,10 @@ public class ProductDetailDialog extends JDialog {
 			}
 		};
 		table = new JTable(tableModel);
-		table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-		table.setRowHeight(25);
-		table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+		table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		table.setRowHeight(28);
+		table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		
 		loadBangLoHang(sp.getMaSanPham(), sp.getDonViTinh());
 		
@@ -150,7 +152,8 @@ public class ProductDetailDialog extends JDialog {
 			@Override
 			public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 				java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				String status = (String) table.getModel().getValueAt(table.convertRowIndexToModel(row), 4);
+				int statusCol = table.getColumnCount() - 1; // last column = Trạng thái
+				String status = (String) table.getModel().getValueAt(table.convertRowIndexToModel(row), statusCol);
 				if (!isSelected) {
 					if ("Quá hạn".equals(status)) {
 						c.setBackground(new Color(255, 230, 230)); // Đỏ nhạt
@@ -252,9 +255,15 @@ public class ProductDetailDialog extends JDialog {
 		java.time.LocalDate now = java.time.LocalDate.now();
 		java.time.LocalDate next30Days = now.plusDays(30);
 		java.time.format.DateTimeFormatter dfSD = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		java.time.format.DateTimeFormatter dfDT = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+		java.text.DecimalFormat moneyFmt = new java.text.DecimalFormat("#,### ₫");
 
 		for (LoHang lh : batches) {
 			String hanSD = lh.getHanSuDung() != null ? lh.getHanSuDung().format(dfSD) : "N/A";
+			String ngayNhap = lh.getThoiGianNhap() != null ? lh.getThoiGianNhap().format(dfDT) 
+					: (lh.getNgayNhap() != null ? lh.getNgayNhap().format(dfDT) : "N/A");
+			String ncc = lh.getTenNhaCungCap() != null ? lh.getTenNhaCungCap() : "Không rõ";
+			String giaNhap = lh.getGiaNhap() != null ? moneyFmt.format(lh.getGiaNhap()) : "N/A";
 			String loai = lh.getLoaiHinhBan() != null ? lh.getLoaiHinhBan() : "Chưa xác định";
 			String status = "An toàn";
 			
@@ -264,8 +273,24 @@ public class ProductDetailDialog extends JDialog {
 			}
 			
 			tableModel.addRow(new Object[] {
-				lh.getSoLo(), hanSD, lh.getSoLuongTon() + " " + donVi, loai, status
+				lh.getSoLo(), ncc, ngayNhap, 
+				lh.getSoLuongNhap() + " " + donVi, 
+				lh.getSoLuongTon() + " " + donVi, 
+				giaNhap, hanSD, loai, status
 			});
 		}
+	}
+
+	/** Map giá trị LoaiSanPham từ DB sang nhãn tiếng Việt */
+	private static String loaiSPLabel(String dbValue) {
+		if (dbValue == null) return "Không xác định";
+		return switch (dbValue) {
+			case "Thuoc" -> "Thuốc";
+			case "DuocMiPham" -> "Dược mỹ phẩm";
+			case "ThucPhamChucNang" -> "Thực phẩm chức năng";
+			case "ChamSocCaNhan" -> "Chăm sóc cá nhân";
+			case "ThietBiYTe" -> "Thiết bị y tế";
+			default -> dbValue;
+		};
 	}
 }

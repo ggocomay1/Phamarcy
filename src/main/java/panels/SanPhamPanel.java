@@ -259,6 +259,14 @@ public class SanPhamPanel extends JPanel {
 		panel.add(lblLoaiSP);
 
 		cbLoaiSanPham = new JComboBox<>(new String[]{"Thuoc", "DuocMiPham", "ThucPhamChucNang", "ChamSocCaNhan", "ThietBiYTe"});
+		cbLoaiSanPham.setRenderer(new javax.swing.DefaultListCellRenderer() {
+			@Override
+			public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				setText(loaiSPLabel(String.valueOf(value)));
+				return this;
+			}
+		});
 		cbLoaiSanPham.setBackground(Color.WHITE);
 		cbLoaiSanPham.setBounds(140, y, fieldWidth, fieldHeight);
 		panel.add(cbLoaiSanPham);
@@ -394,7 +402,15 @@ public class SanPhamPanel extends JPanel {
 		filterSPPanel.add(lblFilterLoai);
 		
 		JComboBox<String> cbTimKiemLoaiSP = new JComboBox<>(new String[] {
-			"Tất cả loại", "Thuốc", "DuocMiPham", "ThucPhamChucNang", "ChamSocCaNhan", "ThietBiYTe"
+			"Tất cả loại", "Thuoc", "DuocMiPham", "ThucPhamChucNang", "ChamSocCaNhan", "ThietBiYTe"
+		});
+		cbTimKiemLoaiSP.setRenderer(new javax.swing.DefaultListCellRenderer() {
+			@Override
+			public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				setText(loaiSPLabel(String.valueOf(value)));
+				return this;
+			}
 		});
 		cbTimKiemLoaiSP.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		cbTimKiemLoaiSP.addActionListener(e -> {
@@ -956,5 +972,21 @@ public class SanPhamPanel extends JPanel {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Map giá trị LoaiSanPham từ DB (không dấu) sang nhãn tiếng Việt có dấu
+	 */
+	private static String loaiSPLabel(String dbValue) {
+		if (dbValue == null) return "";
+		return switch (dbValue) {
+			case "Thuoc" -> "Thuốc";
+			case "DuocMiPham" -> "Dược mỹ phẩm";
+			case "ThucPhamChucNang" -> "Thực phẩm chức năng";
+			case "ChamSocCaNhan" -> "Chăm sóc cá nhân";
+			case "ThietBiYTe" -> "Thiết bị y tế";
+			case "Tất cả loại" -> "Tất cả loại";
+			default -> dbValue;
+		};
 	}
 }

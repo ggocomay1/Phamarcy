@@ -152,7 +152,7 @@ public class PhieuNhapDao {
 
 					// 3. [Requirement: FORCE_RESURRECT_PRODUCT_SQL] Ép sản phẩm hiện lại (TrangThai
 					// = 1)
-					String sqlResurrect = "UPDATE SanPham SET TrangThai = 1, DaXoa = 0 WHERE MaSanPham = ?";
+					String sqlResurrect = "UPDATE SanPham SET DaXoa = 0 WHERE MaSanPham = ?";
 					try (PreparedStatement psRes = con.prepareStatement(sqlResurrect)) {
 						for (ChiTietPhieuNhap ct : chiTietList) {
 							psRes.setInt(1, ct.getMaSanPham());
